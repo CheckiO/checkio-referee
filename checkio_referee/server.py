@@ -85,7 +85,7 @@ class RefereeBase(object):
                     exec_name=category
                 )
 
-                if not RefereeBase.RESULTS_COMPARATOR(test['answer'], result):
+                if not self.RESULTS_COMPARATOR(test['answer'], result):
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
