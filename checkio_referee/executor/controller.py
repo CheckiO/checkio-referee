@@ -73,7 +73,8 @@ class ExecutorController(object):
     def start_env(self, exec_name=None):
         if exec_name is None:
             exec_name = self.DEFAULT_ENV_NAME
-            self.current_exec_name = self.DEFAULT_ENV_NAME
+        if self.current_exec_name is None:
+            self.current_exec_name = exec_name
 
         if self.connections is not None and exec_name in self.connections.keys():
             raise ExecutorException('Env {} already exists'.format(exec_name))
