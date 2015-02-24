@@ -70,7 +70,7 @@ class ExecutorController(object):
         logging.info("REFEREE-EXECUTOR:: connected {}".format(exec_name))
         self.connected[exec_name].set_result(True)
 
-    def start_env(self, exec_name=None, config=None):
+    def start_env(self, exec_name=None):
         if exec_name is None:
             exec_name = self.DEFAULT_ENV_NAME
             self.current_exec_name = self.DEFAULT_ENV_NAME
@@ -82,7 +82,7 @@ class ExecutorController(object):
         args = [
             executable,  # TODO: WTF
             str(ExecutorTCPServer.PORT),
-            exec_name
+            '"{}"'.format(exec_name)
         ]
         stream = Subprocess.STREAM
         env = {'PYTHONUNBUFFERED': '0'}
