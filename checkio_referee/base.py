@@ -59,26 +59,25 @@ class RefereeBase(object):
             'run_in_console': self.run_in_console
         }[user_action]()
 
-    @property
-    def env_config(self, random_seed=None):
+    def get_env_config(self, random_seed=None):
         env_config = {}
         if self.ENV_COVERCODE is not None and self.ENV_COVERCODE[self.CURRENT_ENV] is not None:
             env_config['cover_code'] = self.ENV_COVERCODE[self.CURRENT_ENV]
         if random_seed is not None:
             env_config['random_seed'] = random_seed
-        return None
+        return env_config
 
     @gen.coroutine
     def run(self):
         yield self.executor.start_env()
-        yield self.executor.set_config(self.env_config)
+        yield self.executor.set_config(self.get_env_config())
         yield self.executor.run_code(code=self.user_data['code'])
         yield self.executor.kill()
 
     @gen.coroutine
     def run_in_console(self):
         yield self.executor.start_env()
-        yield self.executor.set_config(self.env_config)
+        yield self.executor.set_config(self.get_env_config())
         yield self.executor.run_in_console(code=self.user_data['code'])
         # TODO: what next? kill exec?
 
@@ -93,7 +92,7 @@ class RefereeBase(object):
 
         for category, tests in self.TESTS.items():
             yield self.executor.start_env(category)
-            yield self.executor.set_config(self.env_config)
+            yield self.executor.set_config(self.get_env_config())
             for test in tests:
                 result_code = yield self.executor.run_code_and_function(
                     code=self.user_data['code'],
