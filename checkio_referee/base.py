@@ -13,7 +13,7 @@ class RefereeBase(object):
     TESTS = None
     FUNCTION_NAME = 'checkio'
     CURRENT_ENV = None
-    ENV_COWERCODE = None
+    ENV_COVERCODE = None
 
     def __init__(self, data_server_host, data_server_port, io_loop=None):
         assert self.EXECUTABLE_PATH
