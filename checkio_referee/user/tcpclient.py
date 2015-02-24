@@ -45,18 +45,13 @@ class UserClient(object):
             "data": data
         })
         yield self.stream.write(message)
-        self._on_write(message)
+        logging.info('UserClient:: send: {}'.format(message))
 
     @gen.coroutine
     def _read(self):
         data_source = yield self.stream.read_until(self.terminator)
+        logging.info('UserClient:: received: {}'.format(data_source))
         return self._data_decode(data_source)
-
-    def _on_write(self, message):
-        logging.info('UserClient:: Message `{}` has been send'.format(message))
-
-    def _on_read(self, message):
-        logging.info('UserClient:: Message `{}` has been received'.format(message))
 
     def _data_encode(self, data):
         data = json_encode(data).encode()
@@ -98,15 +93,17 @@ class UserClient(object):
         })
 
     @gen.coroutine
-    def post_check_fail(self, description=None):
+    def post_check_fail(self, points=None, description=None):
         yield self.post_data({
             'type': 'check_fail',
+            'points': points,
             'content': description
         })
 
     @gen.coroutine
-    def post_check_success(self, description=None):
+    def post_check_success(self, points=None, description=None):
         yield self.post_data({
             'type': 'check_success',
+            'points': points,
             'content': description
         })

@@ -1,1 +1,1 @@
-from checkio_referee.server import RefereeBase
+from checkio_referee.base import RefereeBase

@@ -51,8 +51,11 @@ class ExecutorController(object):
     @gen.coroutine
     def _request(self, data, exec_name=None):
         connection = self._get_connection(exec_name)
+        logging.info("REFEREE-EXECUTOR:: send {}".format(data))
         yield connection.write(data)
-        return (yield connection.read_message())
+        response = yield connection.read_message()
+        logging.info("REFEREE-EXECUTOR:: response {}".format(response))
+        return response
 
     def on_connection_message(self, data, stream):
         if data.get('status') != 'connected':
@@ -64,6 +67,7 @@ class ExecutorController(object):
             self.connections = {
                 exec_name: stream
             }
+        logging.info("REFEREE-EXECUTOR:: connected {}".format(exec_name))
         self.connected[exec_name].set_result(True)
 
     def start_env(self, exec_name=None, config=None):

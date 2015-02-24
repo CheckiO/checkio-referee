@@ -12,7 +12,8 @@ class RefereeBase(object):
     EXECUTABLE_PATH = None
     TESTS = None
     FUNCTION_NAME = 'checkio'
-    RESULTS_COMPARATOR = lambda x, y: x == y
+    CURRENT_ENV = None
+    ENV_COWERCODE = None
 
     def __init__(self, data_server_host, data_server_port, io_loop=None):
         assert self.EXECUTABLE_PATH
@@ -30,6 +31,9 @@ class RefereeBase(object):
 
     def initialize(self):
         pass
+
+    def result_comparator(self, reference, result):
+        return reference == result
 
     @gen.coroutine
     def start(self):
@@ -73,19 +77,24 @@ class RefereeBase(object):
         Run code with different arguments from self.TESTS
         :return:
         """
+        logging.info("Start check")
         assert self.TESTS
 
         for category, tests in self.TESTS.items():
             yield self.executor.start_env(category)
             for test in tests:
-                result = yield self.executor.run_code_and_function(
+                result_code = yield self.executor.run_code_and_function(
                     code=self.user_data['code'],
                     function_name=self.FUNCTION_NAME,
                     args=test['input'],
                     exec_name=category
                 )
+                result_compare = self.result_comparator(test['answer'], result_code)
+                logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
+                    category, tests.index(test), result_compare)
+                )
 
-                if not self.RESULTS_COMPARATOR(test['answer'], result):
+                if not result_compare:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
