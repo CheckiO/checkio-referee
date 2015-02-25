@@ -110,7 +110,10 @@ class RefereeBase(object):
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
             yield self.executor.kill(category)
-        return (yield self.user.post_check_success())
+        return self.success()
+
+    def success(self):
+        yield self.user.post_check_success()
 
     def on_stdout(self, exec_name, line):
         self.user.post_out(line)
