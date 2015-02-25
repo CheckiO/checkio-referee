@@ -113,7 +113,7 @@ class RefereeBase(object):
         return self.success()
 
     def success(self):
-        yield self.user.post_check_success()
+        return (yield self.user.post_check_success())
 
     def on_stdout(self, exec_name, line):
         self.user.post_out(line)
