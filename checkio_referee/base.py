@@ -8,7 +8,6 @@ from checkio_referee.executor import ExecutorController
 
 
 class RefereeBase(object):
-
     EXECUTABLE_PATH = None
     TESTS = None
     FUNCTION_NAME = 'checkio'
@@ -32,8 +31,8 @@ class RefereeBase(object):
     def initialize(self):
         pass
 
-    def result_comparator(self, reference, result, input_data=None):
-        return reference == result
+    def result_comparator(self, reference, result, input_data):
+        return reference == result, "Equality"
 
     @gen.coroutine
     def start(self):
@@ -100,14 +99,14 @@ class RefereeBase(object):
                     args=test.get('input', None),
                     exec_name=category
                 )
-                result_compare = self.result_comparator(test.get('answer', None),
-                                                        result_code,
-                                                        test.get("input", None))
+                compare_result, additional_info = self.result_comparator(test.get('answer', None),
+                                                                         result_code,
+                                                                         test.get("input", None))
                 logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-                    category, tests.index(test), result_compare)
+                    category, tests.index(test), compare_result)
                 )
 
-                if not result_compare:
+                if not compare_result:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
