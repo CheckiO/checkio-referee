@@ -1,5 +1,5 @@
 """
-This library contains various predefined comparing functions for referee class.
+This library contains various predefined comparing and checking functions for referee class.
 """
 
 

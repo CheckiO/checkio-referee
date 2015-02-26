@@ -31,8 +31,8 @@ class RefereeBase(object):
     def initialize(self):
         pass
 
-    def result_comparator(self, reference, result, input_data):
-        return reference == result, "Equality"
+    def result_checker(self, test_data, result):
+        return test_data.get("answer", None) == result
 
     @gen.coroutine
     def start(self):
@@ -99,14 +99,12 @@ class RefereeBase(object):
                     args=test.get('input', None),
                     exec_name=category
                 )
-                compare_result, additional_info = self.result_comparator(test.get('answer', None),
-                                                                         result_code,
-                                                                         test.get("input", None))
+                check_result = self.result_checker(test, result_code)
                 logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-                    category, tests.index(test), compare_result)
+                    category, tests.index(test), check_result)
                 )
 
-                if not compare_result:
+                if not check_result:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
