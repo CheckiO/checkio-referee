@@ -11,3 +11,8 @@ py_2_str = """
 def cover(func, data):
     return func(str(data))
 """
+
+py_tuple = """
+def cover(func, data):
+    return func(tuple(data))
+"""
