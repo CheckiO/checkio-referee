@@ -5,6 +5,7 @@ from tornado.ioloop import IOLoop
 
 from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
+from checkio_referee.verifications import EqualVerification
 
 
 class RefereeBase(object):
@@ -13,6 +14,7 @@ class RefereeBase(object):
     FUNCTION_NAME = 'checkio'
     CURRENT_ENV = None
     ENV_COVERCODE = None
+    VERIFICATION = EqualVerification
 
     def __init__(self, data_server_host, data_server_port, io_loop=None):
         assert self.EXECUTABLE_PATH
@@ -30,9 +32,6 @@ class RefereeBase(object):
 
     def initialize(self):
         pass
-
-    def result_checker(self, test_data, result):
-        return test_data.get("answer", None) == result
 
     @gen.coroutine
     def start(self):
@@ -99,12 +98,12 @@ class RefereeBase(object):
                     args=test.get('input', None),
                     exec_name=category
                 )
-                check_result = self.result_checker(test, result_code)
+                verification = self.VERIFICATION(test, result_code)
                 logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-                    category, tests.index(test), check_result)
+                    category, tests.index(test), verification.test_passed)
                 )
 
-                if not check_result:
+                if not verification.test_passed:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
