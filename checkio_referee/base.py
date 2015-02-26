@@ -97,10 +97,12 @@ class RefereeBase(object):
                 result_code = yield self.executor.run_code_and_function(
                     code=self.user_data['code'],
                     function_name=self.FUNCTION_NAME,
-                    args=test['input'],
+                    args=test.get('input', None),
                     exec_name=category
                 )
-                result_compare = self.result_comparator(test['answer'], result_code, test["input"])
+                result_compare = self.result_comparator(test.get('answer', None),
+                                                        result_code,
+                                                        test.get("input", None))
                 logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
                     category, tests.index(test), result_compare)
                 )
