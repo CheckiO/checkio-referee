@@ -32,7 +32,7 @@ class RefereeBase(object):
     def initialize(self):
         pass
 
-    def result_comparator(self, reference, result):
+    def result_comparator(self, reference, result, input_data=None):
         return reference == result
 
     @gen.coroutine
@@ -100,7 +100,7 @@ class RefereeBase(object):
                     args=test['input'],
                     exec_name=category
                 )
-                result_compare = self.result_comparator(test['answer'], result_code)
+                result_compare = self.result_comparator(test['answer'], result_code, test["input"])
                 logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
                     category, tests.index(test), result_compare)
                 )
