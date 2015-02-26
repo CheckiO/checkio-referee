@@ -5,7 +5,7 @@ from tornado.ioloop import IOLoop
 
 from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
-from checkio_referee.verifications import EqualVerification
+from checkio_referee.verifications import EqualVerification, VerificationError
 
 
 class RefereeBase(object):
@@ -98,15 +98,19 @@ class RefereeBase(object):
                     args=test.get('input', None),
                     exec_name=category
                 )
-                verification = self.VERIFICATION(test, result_code)
-                logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-                    category, tests.index(test), verification.test_passed)
-                )
-
-                if not verification.test_passed:
+                verification = self.VERIFICATION(test)
+                try:
+                    verification.verify(result_code)
+                    test_passed = True
+                except VerificationError:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
+                    test_passed = False
                     return (yield self.user.post_check_fail(description))
+                finally:
+                    logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
+                        category, tests.index(test), test_passed))
+
             yield self.executor.kill(category)
         return self.success()
 

@@ -3,31 +3,37 @@ This library contains various predefined comparing and checking classes for refe
 """
 
 
-class BaseVerification(object):
-    def __init__(self, test_data, outer_result):
-        self.test_data = test_data
-        self.outer_result = outer_result
-        self.additional_data = None
-        self.test_passed = self.verify()
+class VerificationError(Exception):
+    pass
 
-    def verify(self):
+
+class BaseVerification(object):
+    def __init__(self, test_data):
+        self._test = test_data
+        self.additional_data = None
+
+    def verify(self, outer_result):
         raise NotImplementedError
 
 
 class EqualVerification(BaseVerification):
-    def verify(self):
-        return self.test_data.get("answer", None) == self.outer_result
+    def verify(self, outer_result):
+        if self._test.get("answer", None) != outer_result:
+            raise VerificationError("Not equal")
 
 
 class FloatEqualVerification(BaseVerification):
     PRECISION = 3
 
-    def verify(self):
-        return abs(self.test_data.get("answer", 0) - self.outer_result) <= 0.1 ** self.PRECISION
+    def verify(self, outer_result):
+        if abs(self._test.get("answer", 0) - outer_result) > 0.1 ** self.PRECISION:
+            raise VerificationError("Out of the precision edges.")
 
 
 class ExampleVerification(BaseVerification):
-    def verify(self):
+    def verify(self, outer_result):
         from random import randint
+
         self.additional_data = {"draw": [1, 1], "message": "Example message"}
-        return bool(randint(0, 1))
+        if randint(0, 1):
+            raise VerificationError("Head. You Lose.")
