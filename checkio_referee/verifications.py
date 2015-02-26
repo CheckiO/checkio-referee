@@ -28,5 +28,6 @@ class FloatEqualVerification(BaseVerification):
 
 class ExampleVerification(BaseVerification):
     def verify(self):
+        from random import randint
         self.additional_data = {"draw": [1, 1], "message": "Example message"}
-        return False
+        return bool(randint(0, 1))
