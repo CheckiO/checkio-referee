@@ -111,7 +111,7 @@ class RefereeBase(object):
                     logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
                         category, tests.index(test), test_passed))
                     if validator.additional_data:
-                        logging.info("VERIFICATION:: Additional data: {}".format(
+                        logging.info("VALIDATOR:: Additional data: {}".format(
                             validator.additional_data))
 
             yield self.executor.kill(category)
