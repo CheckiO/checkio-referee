@@ -5,7 +5,7 @@ from tornado.ioloop import IOLoop
 
 from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
-from checkio_referee.verifications import EqualVerification, VerificationError
+from checkio_referee.validators import EqualValidator, ValidationError
 
 
 class RefereeBase(object):
@@ -14,7 +14,7 @@ class RefereeBase(object):
     FUNCTION_NAME = 'checkio'
     CURRENT_ENV = None
     ENV_COVERCODE = None
-    VERIFICATION = EqualVerification
+    VALIDATOR = EqualValidator
 
     def __init__(self, data_server_host, data_server_port, io_loop=None):
         assert self.EXECUTABLE_PATH
@@ -98,11 +98,11 @@ class RefereeBase(object):
                     args=test.get('input', None),
                     exec_name=category
                 )
-                verification = self.VERIFICATION(test)
+                validator = self.VALIDATOR(test)
                 try:
-                    verification.verify(result_code)
+                    validator.validate(result_code)
                     test_passed = True
-                except VerificationError:
+                except ValidationError:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     test_passed = False
@@ -110,9 +110,9 @@ class RefereeBase(object):
                 finally:
                     logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
                         category, tests.index(test), test_passed))
-                    if verification.additional_data:
+                    if validator.additional_data:
                         logging.info("VERIFICATION:: Additional data: {}".format(
-                            verification.additional_data))
+                            validator.additional_data))
 
             yield self.executor.kill(category)
         return self.success()
