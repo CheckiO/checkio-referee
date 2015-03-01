@@ -94,7 +94,7 @@ class RefereeBase(object):
             for test in tests:
                 result_code = yield self.executor.run_code_and_function(
                     code=self.user_data['code'],
-                    function_name=self.FUNCTION_NAME,
+                    function_name=self.FUNCTION_NAME or test["function_name"],
                     args=test.get('input', None),
                     exec_name=category
                 )
