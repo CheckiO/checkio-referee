@@ -5,6 +5,7 @@ from tornado.ioloop import IOLoop
 
 from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
+from checkio_referee.validators import EqualValidator
 
 
 class RefereeBase(object):
@@ -13,6 +14,7 @@ class RefereeBase(object):
     FUNCTION_NAME = 'checkio'
     CURRENT_ENV = None
     ENV_COVERCODE = None
+    VALIDATOR = EqualValidator
 
     def __init__(self, data_server_host, data_server_port, io_loop=None):
         assert self.EXECUTABLE_PATH
@@ -30,9 +32,6 @@ class RefereeBase(object):
 
     def initialize(self):
         pass
-
-    def result_checker(self, test_data, result):
-        return test_data.get("answer", None) == result
 
     @gen.coroutine
     def start(self):
@@ -95,24 +94,30 @@ class RefereeBase(object):
             for test in tests:
                 result_code = yield self.executor.run_code_and_function(
                     code=self.user_data['code'],
-                    function_name=self.FUNCTION_NAME,
+                    function_name=self.FUNCTION_NAME or test["function_name"],
                     args=test.get('input', None),
                     exec_name=category
                 )
-                check_result = self.result_checker(test, result_code)
-                logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-                    category, tests.index(test), check_result)
-                )
 
-                if not check_result:
+                validator = self.VALIDATOR(test)
+                validator_result = validator.validate(result_code)
+
+                logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
+                    category, tests.index(test), validator_result.test_passed))
+                if validator_result.additional_data:
+                    logging.info("VALIDATOR:: Additional data: {}".format(
+                        validator.additional_data))
+
+                if not validator_result.test_passed:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
                     return (yield self.user.post_check_fail(description))
-            yield self.executor.kill(category)
-        return self.success()
 
-    def success(self):
-        return (yield self.user.post_check_success())
+            yield self.executor.kill(category)
+        return self.check_success()
+
+    def check_success(self, description=None, points=None):
+        return (yield self.user.post_check_success(description=description, points=points))
 
     def on_stdout(self, exec_name, line):
         self.user.post_out(line)
