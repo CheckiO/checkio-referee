@@ -1,7 +1,7 @@
 """
 This library contains various predefined comparing and checking classes for referee class.
 """
-from random import randint
+from random import choice
 
 
 class ValidatorResult(object):
@@ -21,23 +21,18 @@ class BaseValidator(object):
 
 class EqualValidator(BaseValidator):
     def validate(self, outer_result):
-        if self._test.get("answer", None) != outer_result:
-            return ValidatorResult(False)
-        return ValidatorResult(True)
+        return ValidatorResult(self._test.get("answer", None) == outer_result)
 
 
 class FloatEqualValidator(BaseValidator):
     PRECISION = 3
 
     def validate(self, outer_result):
-        if abs(self._test.get("answer", 0) - outer_result) > 0.1 ** self.PRECISION:
-            return ValidatorResult(False)
-        return ValidatorResult(True)
+        diff = abs(self._test.get("answer", 0) - outer_result)
+        return ValidatorResult(diff <= 0.1 ** self.PRECISION, diff)
 
 
 class ExampleValidator(BaseValidator):
     def validate(self, outer_result):
-        additional_data = {"draw": [1, 1], "message": "Example message"}
-        if randint(0, 1):
-            return ValidatorResult(False, additional_data)
-        return ValidatorResult(True, additional_data)
+        return ValidatorResult(choice((True, False)),
+                               {"draw": [1, 1], "message": "Example message", "number": 42})
