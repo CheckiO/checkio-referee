@@ -1,10 +1,13 @@
 """
 This library contains various predefined comparing and checking classes for referee class.
 """
+from random import randint
 
 
-class ValidationError(Exception):
-    pass
+class ValidatorResult(object):
+    def __init__(self, test_passed, additional_data=None):
+        self.test_passed = test_passed
+        self.additional_data = additional_data
 
 
 class BaseValidator(object):
@@ -19,7 +22,8 @@ class BaseValidator(object):
 class EqualValidator(BaseValidator):
     def validate(self, outer_result):
         if self._test.get("answer", None) != outer_result:
-            raise ValidationError("Not equal")
+            return ValidatorResult(False)
+        return ValidatorResult(True)
 
 
 class FloatEqualValidator(BaseValidator):
@@ -27,13 +31,13 @@ class FloatEqualValidator(BaseValidator):
 
     def validate(self, outer_result):
         if abs(self._test.get("answer", 0) - outer_result) > 0.1 ** self.PRECISION:
-            raise ValidationError("Out of the precision edges.")
+            return ValidatorResult(False)
+        return ValidatorResult(True)
 
 
 class ExampleValidator(BaseValidator):
     def validate(self, outer_result):
-        from random import randint
-
-        self.additional_data = {"draw": [1, 1], "message": "Example message"}
+        additional_data = {"draw": [1, 1], "message": "Example message"}
         if randint(0, 1):
-            raise ValidationError("Head. You Lose.")
+            return ValidatorResult(False, additional_data)
+        return ValidatorResult(True, additional_data)

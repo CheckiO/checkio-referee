@@ -5,7 +5,7 @@ from tornado.ioloop import IOLoop
 
 from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
-from checkio_referee.validators import EqualValidator, ValidationError
+from checkio_referee.validators import EqualValidator
 
 
 class RefereeBase(object):
@@ -98,27 +98,26 @@ class RefereeBase(object):
                     args=test.get('input', None),
                     exec_name=category
                 )
+
                 validator = self.VALIDATOR(test)
-                try:
-                    validator.validate(result_code)
-                    test_passed = True
-                except ValidationError:
+                validator_result = validator.validate(result_code)
+
+                logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
+                    category, tests.index(test), validator_result.test_passed))
+                if validator_result.additional_data:
+                    logging.info("VALIDATOR:: Additional data: {}".format(
+                        validator.additional_data))
+
+                if not validator_result.test_passed:
                     yield self.executor.kill(category)
                     description = "Category: {0}. Test {1}".format(category, tests.index(test))
-                    test_passed = False
                     return (yield self.user.post_check_fail(description))
-                finally:
-                    logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-                        category, tests.index(test), test_passed))
-                    if validator.additional_data:
-                        logging.info("VALIDATOR:: Additional data: {}".format(
-                            validator.additional_data))
 
             yield self.executor.kill(category)
-        return self.success()
+        return self.check_success()
 
-    def success(self):
-        return (yield self.user.post_check_success())
+    def check_success(self, description=None, points=None):
+        return (yield self.user.post_check_success(description=description, points=points))
 
     def on_stdout(self, exec_name, line):
         self.user.post_out(line)
