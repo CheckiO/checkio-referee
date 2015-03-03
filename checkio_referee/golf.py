@@ -1,5 +1,6 @@
 from checkio_referee import RefereeBase
 import logging
+from tornado import gen
 
 
 class RefereeCodeGolf(RefereeBase):
@@ -12,6 +13,7 @@ class RefereeCodeGolf(RefereeBase):
     def count_code_length(self):
         return len(self.user_data['code'])
 
+    @gen.coroutine
     def check_success(self, description=None, points=None):
         code_length = self.count_code_length()
         max_length = self.FOR_LANGUAGE_LENGTHS.get(self.CURRENT_ENV, self.DEFAULT_LENGTH)

@@ -116,6 +116,7 @@ class RefereeBase(object):
             yield self.executor.kill(category)
         return self.check_success()
 
+    @gen.coroutine
     def check_success(self, description=None, points=None):
         return (yield self.user.post_check_success(description=description, points=points))
 
