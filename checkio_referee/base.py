@@ -5,8 +5,8 @@ from tornado.ioloop import IOLoop
 
 from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
-from checkio_referee.validators import EqualValidator
-from checkio_referee import representations
+from checkio_referee.util import validators
+from checkio_referee.util import representations
 
 
 class RefereeBase(object):
@@ -15,7 +15,7 @@ class RefereeBase(object):
     FUNCTION_NAME = 'checkio'
     CURRENT_ENV = None
     ENV_COVERCODE = None
-    VALIDATOR = EqualValidator
+    VALIDATOR = validators.EqualValidator
     CALLED_REPRESENTATIONS = {}
 
     def __init__(self, data_server_host, data_server_port, io_loop=None):
