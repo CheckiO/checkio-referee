@@ -9,29 +9,33 @@ from tornado.escape import json_encode, json_decode
 class UserClient(object):
     """
     Client for connect Referee and server worker (send and request info).
-    Protocol description
-    Request object is encoded json object:
-    {
-        "method": "get|post",  # required argument
-        "data": None  # not required arguments
-    }
+    Protocol description: https://checkio.atlassian.net/wiki/pages/viewpage.action?pageId=18219162
     """
 
     terminator = b'\n'
+    ATTR_NAME_CONNECTION_ID = 'user_connection_id'
 
-    def __init__(self, controller, io_loop=None):
-        self.controller = controller
-        self.io_loop = io_loop or IOLoop.current()
-        self.client = TCPClient(io_loop=self.io_loop)
+    def __init__(self, host, port, user_connection_id, io_loop=None):
+        self.__host = host
+        self.__port = port
+        self.__user_connection_id = user_connection_id
+        self._io_loop = io_loop or IOLoop.current()
+        self.client = TCPClient(io_loop=self._io_loop)
         self.stream = None
 
     @gen.coroutine
-    def connect(self, host, port):
+    def connect(self):
         try:
-            self.stream = yield self.client.connect(host=host, port=port)
-            return True
+            return (yield self._connect(self.__host, self.__port))
         except IOError as e:
-            logging.error(e)
+            logging.error(e, exc_info=True)
+            raise
+
+    @gen.coroutine
+    def _connect(self, host, port):
+        self.stream = yield self.client.connect(host=host, port=port)
+        self.__set_user_connection_id()
+        return True
 
     def set_close_callback(self, callback):
         self.stream.set_close_callback(callback)
@@ -106,4 +110,10 @@ class UserClient(object):
             'type': 'check_success',
             'points': points,
             'content': description
+        })
+
+    @gen.coroutine
+    def __set_user_connection_id(self):
+        yield self._write('set', {
+            self.ATTR_NAME_CONNECTION_ID: self.__user_connection_id
         })

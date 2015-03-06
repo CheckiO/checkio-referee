@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from tornado import gen
 from tornado.ioloop import IOLoop
@@ -7,6 +8,8 @@ from checkio_referee.user import UserClient
 from checkio_referee.executor import ExecutorController
 from checkio_referee.util import validators
 from checkio_referee.util import representations
+
+logger = logging.getLogger(__name__)
 
 
 class RefereeBase(object):
@@ -18,16 +21,16 @@ class RefereeBase(object):
     VALIDATOR = validators.EqualValidator
     CALLED_REPRESENTATIONS = {}
 
-    def __init__(self, data_server_host, data_server_port, io_loop=None):
+    def __init__(self, server_host, server_port, user_connection_id, io_loop=None):
         assert self.EXECUTABLE_PATH
-        self.tcp_server_host = data_server_host
-        self.tcp_server_port = data_server_port
-        self.io_loop = io_loop or IOLoop.instance()
+        self.__user_connection_id = user_connection_id
+        self.__io_loop = io_loop or IOLoop.instance()
+
         self.initialize()
         self.user_data = None
 
-        self.executor = ExecutorController(self.io_loop, self.EXECUTABLE_PATH, self)
-        self.user = UserClient(self.io_loop)
+        self.executor = ExecutorController(self.__io_loop, self.EXECUTABLE_PATH, self)
+        self.user = UserClient(server_host, server_port, user_connection_id, self.__io_loop)
         self.user_connected = None
 
         self.points = None
@@ -40,14 +43,17 @@ class RefereeBase(object):
 
     @gen.coroutine
     def start(self):
-        self.user_connected = yield self.user.connect(self.tcp_server_host, self.tcp_server_port)
+        self.user_connected = yield self.user.connect()
         self.user.set_close_callback(self.on_close_user_connection)
-        if self.user_connected:
-            try:
-                yield self.on_ready()
-            except Exception as e:
-                logging.error(e)
-                raise
+        if not self.user_connected:
+            logger.error("Bad connecting to main server")
+            sys.exit()
+        try:
+            yield self.on_ready()
+        except Exception as e:
+            logging.error(e, exc_info=True)
+            raise
+
 
     def on_close_user_connection(self):
         self.executor.kill_all()
