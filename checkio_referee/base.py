@@ -56,7 +56,7 @@ class RefereeBase(object):
     def on_ready(self):
         self.user_data = yield self.user.get_data(data=['code', 'user_action'])
         user_action = self.user_data['user_action']
-        return {
+        yield {
             'run': self.run,
             'check': self.check,
             'run_in_console': self.run_in_console
@@ -131,7 +131,7 @@ class RefereeBase(object):
                     category_name, test_number)
                 return (yield self.check_fail(description))
 
-        yield self.executor.kill(category_name)
+        return (yield self.executor.kill(category_name))
 
 
     @gen.coroutine
