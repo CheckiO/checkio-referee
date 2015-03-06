@@ -29,6 +29,9 @@ class RefereeBase(object):
         self.executor = ExecutorController(self.io_loop, self.EXECUTABLE_PATH, self)
         self.user = UserClient(self.io_loop)
         self.user_connected = None
+
+        self.points = None
+
         if io_loop is None:
             IOLoop.instance().start()
 
@@ -81,23 +84,6 @@ class RefereeBase(object):
         yield self.executor.run_in_console(code=self.user_data['code'])
         # TODO: what next? kill exec?
 
-    @gen.coroutine
-    def pre_test(self, test, **kwargs):
-        representation = self.CALLED_REPRESENTATIONS.get(self.CURRENT_ENV,
-                                                         representations.base_representation)
-        called_str = representation(test, self.FUNCTION_NAME)
-        logging.info("REFEREE:: Called: {}".format(called_str))
-        # TODO: Send data to Editor
-
-    @gen.coroutine
-    def post_test(self, test, validator_result, **kwargs):
-        logging.info("REFEREE:: check result for category {0}, test {1}: {2}".format(
-            kwargs.get("category_name", ""),
-            kwargs.get("test_number", 0),
-            validator_result.test_passed))
-        if validator_result.additional_data:
-            logging.info("VALIDATOR:: Data: {}".format(validator_result.additional_data))
-        # TODO: Send data to Editor
 
     @gen.coroutine
     def check(self):
@@ -105,37 +91,70 @@ class RefereeBase(object):
         Run code with different arguments from self.TESTS
         :return:
         """
-        logging.info("Start check")
+        logging.info("CHECK:: Start checking")
         assert self.TESTS
 
         for category_name, tests in self.TESTS.items():
-            yield self.executor.start_env(category_name)
-            yield self.executor.set_config(self.get_env_config())
-            result_code = yield self.executor.run_code(
-                code=self.user_data['code'],
+            yield self.check_category(category_name, tests)
+
+        return (yield self.check_success(points=self.points))
+
+    @gen.coroutine
+    def check_category(self, category_name, tests, **kwargs):
+        logging.info("CHECK:: Start Category '{}' checking".format(category_name))
+        yield self.executor.start_env(category_name)
+        yield self.executor.set_config(self.get_env_config())
+        result_code = yield self.executor.run_code(
+            code=self.user_data['code'],
+            exec_name=category_name)
+        if result_code.get("status") != "success":
+            return (yield self.user.post_check_fail())
+        for test_number, test in enumerate(tests):
+            yield self.pre_test(test)
+            result_func = yield self.executor.run_func(
+                function_name=self.FUNCTION_NAME or test["function_name"],
+                args=test.get('input', None),
                 exec_name=category_name)
-            if result_code.get("status") != "success":
-                return (yield self.user.post_check_fail())
-            for test_number, test in enumerate(tests):
-                self.pre_test(test)
-                result_func = yield self.executor.run_func(
-                    function_name=self.FUNCTION_NAME or test["function_name"],
-                    args=test.get('input', None),
-                    exec_name=category_name)
+            if result_func.get("status") != "success":
+                description = "Category: {0}. Test {1} Run failed".format(
+                    category_name, test_number)
+                return (yield self.check_fail(description))
+            validator = self.VALIDATOR(test)
+            validator_result = validator.validate(result_func.get("result"))
 
-                validator = self.VALIDATOR(test)
-                validator_result = validator.validate(result_func.get("result"))
+            yield self.post_test(test, validator_result,
+                                 category_name=category_name, test_number=test_number)
 
-                self.post_test(test, validator_result,
-                               category_name=category_name, test_number=test_number)
+            if not validator_result.test_passed:
+                yield self.executor.kill(category_name)
+                description = "Category: {0}. Test {1} Validate Failed".format(
+                    category_name, test_number)
+                return (yield self.check_fail(description))
 
-                if not validator_result.test_passed:
-                    yield self.executor.kill(category_name)
-                    description = "Category: {0}. Test {1}".format(category_name, test_number)
-                    return (yield self.user.post_check_fail(description))
+        yield self.executor.kill(category_name)
 
-            yield self.executor.kill(category_name)
-        return self.check_success()
+
+    @gen.coroutine
+    def pre_test(self, test, **kwargs):
+        representation = self.CALLED_REPRESENTATIONS.get(self.CURRENT_ENV,
+                                                         representations.base_representation)
+        called_str = representation(test, self.FUNCTION_NAME)
+        logging.info("PRE_TEST:: Called: {}".format(called_str))
+        # TODO: Send data to Editor
+
+    @gen.coroutine
+    def post_test(self, test, validator_result, **kwargs):
+        logging.info("POST_TEST:: Check result for category {0}, test {1}: {2}".format(
+            kwargs.get("category_name", ""),
+            kwargs.get("test_number", 0),
+            validator_result.test_passed))
+        if validator_result.additional_data:
+            logging.info("VALIDATOR:: Data: {}".format(validator_result.additional_data))
+            # TODO: Send data to Editor
+
+    @gen.coroutine
+    def check_fail(self, description=None, points=None):
+        return (yield self.user.post_check_fail(description))
 
     @gen.coroutine
     def check_success(self, description=None, points=None):
