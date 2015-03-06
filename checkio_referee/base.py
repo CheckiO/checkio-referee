@@ -111,16 +111,20 @@ class RefereeBase(object):
         for category_name, tests in self.TESTS.items():
             yield self.executor.start_env(category_name)
             yield self.executor.set_config(self.get_env_config())
+            result_code = yield self.executor.run_code(
+                code=self.user_data['code'],
+                exec_name=category_name)
+            if result_code.get("status") != "success":
+                return (yield self.user.post_check_fail())
             for test_number, test in enumerate(tests):
                 self.pre_test(test)
-                result_code = yield self.executor.run_code_and_function(
-                    code=self.user_data['code'],
+                result_func = yield self.executor.run_func(
                     function_name=self.FUNCTION_NAME or test["function_name"],
                     args=test.get('input', None),
                     exec_name=category_name)
 
                 validator = self.VALIDATOR(test)
-                validator_result = validator.validate(result_code)
+                validator_result = validator.validate(result_func.get("result"))
 
                 self.post_test(test, validator_result,
                                category_name=category_name, test_number=test_number)
