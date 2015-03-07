@@ -61,7 +61,7 @@ class RefereeBase(object):
 
     def get_env_config(self, random_seed=None):
         env_config = {}
-        if self.ENV_COVERCODE is not None and self.ENV_COVERCODE[self.CURRENT_ENV] is not None:
+        if self.ENV_COVERCODE is not None and self.ENV_COVERCODE.get(self.CURRENT_ENV) is not None:
             env_config['cover_code'] = self.ENV_COVERCODE[self.CURRENT_ENV]
         if random_seed is not None:
             env_config['random_seed'] = random_seed
