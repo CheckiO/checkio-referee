@@ -114,14 +114,14 @@ class RefereeBase(object):
         logging.info("CHECK:: Start checking")
         assert self.TESTS
 
-        for category_name, tests in self.TESTS.items():
+        for category_name, tests in sorted(self.TESTS.items()):
             try:
                 yield self.check_category(category_name, tests)
-            except exceptions.RefereeTestFailed as e:
-                yield self.check_fail(points=e.points, additional_data=e.additional_data)
+            except exceptions.RefereeExecuteFailed as e:
+                yield self.result_check_fail(points=e.points, additional_data=e.additional_data)
                 return
 
-        yield self.check_success()
+        yield self.result_check_success()
         self.exit()
 
     @gen.coroutine
@@ -134,7 +134,7 @@ class RefereeBase(object):
         result_code = yield self.executor.run_code(code=code, exec_name=category_name)
 
         if result_code.get("status") != "success":
-            raise exceptions.RefereeTestFailed()
+            raise exceptions.RefereeCodeRunFailed()
 
         for test_number, test in enumerate(tests):
             yield self.check_test_item(test, category_name=category_name, test_number=test_number)
@@ -152,7 +152,7 @@ class RefereeBase(object):
 
         if result_func.get("status") != "success":
             description = "Category: {0}. Test {1} Run failed".format(category_name, test_number)
-            raise exceptions.RefereeTestFailed(additional_data=description)
+            raise exceptions.RefereeTestFailed(description=description)
         validator = self.VALIDATOR(test)
         validator_result = validator.validate(result_func.get("result"))
 
@@ -163,7 +163,7 @@ class RefereeBase(object):
             yield self.executor.kill(category_name)
             description = "Category: {0}. Test {1} Validate Failed".format(category_name,
                                                                            test_number)
-            raise exceptions.RefereeTestFailed(additional_data=description)
+            raise exceptions.RefereeTestFailed(description=description)
 
     @gen.coroutine
     def pre_test(self, test, **kwargs):
@@ -184,7 +184,7 @@ class RefereeBase(object):
             # TODO: Send data to Editor
 
     @gen.coroutine
-    def check_result(self, success, points=None, additional_data=None):
+    def _result_check(self, success, points=None, additional_data=None):
         yield self.user.send_result(
             action=packet.RESULT_ACTION_CHECK,
             success=success,
@@ -193,12 +193,12 @@ class RefereeBase(object):
         )
 
     @gen.coroutine
-    def check_success(self, points=None, additional_data=None):
-        yield self.check_result(True, points, additional_data)
+    def result_check_success(self, points=None, additional_data=None):
+        yield self._result_check(True, points, additional_data)
 
     @gen.coroutine
-    def check_fail(self, points=None, additional_data=None):
-        yield self.check_result(False, points, additional_data)
+    def result_check_fail(self, points=None, additional_data=None):
+        yield self._result_check(False, points, additional_data)
 
     def on_stdout(self, exec_name, line):
         logging.debug("STDOUT: " + line)
