@@ -6,7 +6,7 @@ from tornado import gen
 from tornado.concurrent import Future
 from tornado.process import Subprocess
 
-from .exceptions import ExecutorException
+from .exceptions import ExecutorException, DuplicateEnvName
 from .tcpserver import ExecutorTCPServer
 
 
@@ -77,7 +77,7 @@ class ExecutorController(object):
             self.current_exec_name = exec_name
 
         if self.connections is not None and exec_name in self.connections.keys():
-            raise ExecutorException('Env {} already exists'.format(exec_name))
+            raise DuplicateEnvName('Env {} already exists'.format(exec_name))
 
         executable = os.path.join(self.executable_path, self.EXECUTABLE_FILE_NAME)
         args = [
@@ -148,9 +148,12 @@ class ExecutorController(object):
 
     @gen.coroutine
     def kill(self, exec_name=None):
+        if exec_name is None:
+            exec_name = self.current_exec_name
         result = yield self._write({
             'action': 'kill'
         }, exec_name)
+        del self.connections[exec_name]
         return result
 
     @gen.coroutine

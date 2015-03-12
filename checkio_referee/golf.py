@@ -1,24 +1,25 @@
-from checkio_referee import RefereeBase
 import logging
+
 from tornado import gen
+
+from checkio_referee import RefereeBase
 
 
 class RefereeCodeGolf(RefereeBase):
-    DEFAULT_LENGTH = 1000
-    FOR_LANGUAGE_LENGTHS = {
-        "some_language_with_specific_length": 1001
-    }
+    DEFAULT_MAX_CODE_LENGTH = 1000
+    MAX_CODE_LENGTHS = {}  # key as language name
     BASE_POINTS = 0
 
     def count_code_length(self):
         return len(self.user_data['code'])
 
     @gen.coroutine
-    def check_success(self, description=None, points=None):
+    def result_check_success(self, points=None, additional_data=None):
         code_length = self.count_code_length()
-        max_length = self.FOR_LANGUAGE_LENGTHS.get(self.CURRENT_ENV, self.DEFAULT_LENGTH)
-        result_points = self.BASE_POINTS + max(max_length - code_length, 0)
-        logging.info("SUCCESS:: Result: points {}, code length {}".format(
-            result_points, code_length))
-        return (yield self.user.post_check_success(
-            description="Code length: {}".format(code_length), points=result_points))
+        max_length = self.MAX_CODE_LENGTHS.get(self.CURRENT_ENV, self.DEFAULT_MAX_CODE_LENGTH)
+        points = self.BASE_POINTS + max(max_length - code_length, 0)
+        additional_data = {
+            'description': "Code length: {}".format(code_length)
+        }
+        logging.info("SUCCESS:: Result: points {}, code length {}".format(points, code_length))
+        yield super().result_check_success(points=points, additional_data=additional_data)

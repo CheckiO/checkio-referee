@@ -1,109 +1,149 @@
 import logging
+import uuid
 
 from tornado.tcpclient import TCPClient
 from tornado import gen
 from tornado.ioloop import IOLoop
-from tornado.escape import json_encode, json_decode
+
+from checkio_referee.utils.signals import Signal
+
+from .exceptions import PacketStructureError
+from . import packet
 
 
 class UserClient(object):
     """
     Client for connect Referee and server worker (send and request info).
-    Protocol description
-    Request object is encoded json object:
-    {
-        "method": "get|post",  # required argument
-        "data": None  # not required arguments
-    }
+    Protocol description: https://checkio.atlassian.net/wiki/pages/viewpage.action?pageId=18219162
     """
 
-    terminator = b'\n'
+    TERMINATOR = b'\n'
+    ATTR_NAME_CONNECTION_ID = 'user_connection_id'
+    ATTR_NAME_DOCKER_ID = 'docker_id'
 
-    def __init__(self, controller, io_loop=None):
-        self.controller = controller
-        self.io_loop = io_loop or IOLoop.current()
-        self.client = TCPClient(io_loop=self.io_loop)
-        self.stream = None
+    def __init__(self, host, port, user_connection_id, docker_id, io_loop=None):
+        self.__host = host
+        self.__port = port
+        self.__user_connection_id = user_connection_id
+        self.__docker_id = docker_id
+        self._io_loop = io_loop or IOLoop.current()
+        self.client = TCPClient(io_loop=self._io_loop)
+        self._stream = None
+        self._requests = dict()
+        self._requests_signals = {
+            packet.InPacket.METHOD_SELECT_RESULT: Signal('data'),
+            packet.InPacket.METHOD_GET_STATUS: Signal('data'),
+            packet.InPacket.METHOD_CANCEL: Signal('data'),
+        }
 
     @gen.coroutine
-    def connect(self, host, port):
+    def connect(self):
         try:
-            self.stream = yield self.client.connect(host=host, port=port)
-            return True
+            yield self._connect(self.__host, self.__port)
         except IOError as e:
-            logging.error(e)
+            logging.error(e, exc_info=True)
+            raise
+        self._read()
+        return True
+
+    @gen.coroutine
+    def _connect(self, host, port):
+        self._stream = yield self.client.connect(host=host, port=port)
+        self._confirm_connection()
 
     def set_close_callback(self, callback):
-        self.stream.set_close_callback(callback)
+        self._stream.set_close_callback(callback)
 
     @gen.coroutine
-    def _write(self, method, data):
-        if self.stream is None:
-            logging.warning("Bad connection")
-        message = self._data_encode({
-            "method": method,
-            "data": data
-        })
-        yield self.stream.write(message)
-        logging.info('UserClient:: send: {}'.format(message))
+    def _write(self, method, data=None, request_id=None):
+        if self._stream.closed():
+            raise PacketStructureError('Connection is closed')
 
-    @gen.coroutine
-    def _read(self):
-        data_source = yield self.stream.read_until(self.terminator)
-        logging.info('UserClient:: received: {}'.format(data_source))
-        return self._data_decode(data_source)
-
-    def _data_encode(self, data):
-        data = json_encode(data).encode()
-        return data + self.terminator
-
-    def _data_decode(self, data):
-        data = data.decode('utf-8')
-        if data is None:
-            return
-        data = json_decode(data)
+        message = packet.OutPacket(method, data, request_id).encode()
         try:
-            return data['data']
-        except KeyError:
-            return data
+            yield self._stream.write(message + self.TERMINATOR)
+        except Exception as e:
+            logging.error(e, exc_info=True)
+        else:
+            logging.debug('UserClient:: send: {}'.format(message))
+
+    def _read(self):
+        self._stream.read_until(self.TERMINATOR, self._on_data)
+
+    def _on_data(self, data):
+        logging.info('UserClient:: received: {}'.format(data))
+        if data is None:
+            logging.error("UserClient:: received")
+        else:
+            try:
+                pkt = packet.InPacket.decode(data)
+            except PacketStructureError as e:
+                logging.error(e, exc_info=True)
+            else:
+                if pkt.request_id is not None:
+                    f = self._requests[pkt.request_id]
+                    f.set_result(result=pkt.data)
+                    del self._requests[pkt.request_id]
+                signal = self._requests_signals[pkt.method]
+                signal.send(data=pkt.data)
+        self._read()
+
+    def add_data_callback(self, request_method, callback):
+        if request_method not in self._requests_signals.keys():
+            raise Exception('Undefined request method {}'.format(request_method))
+
+        signal = self._requests_signals[request_method]
+        signal.connect(callback)
+
+    def send_select_data(self, data):
+        request_id = uuid.uuid4().hex
+        self._write(packet.OutPacket.METHOD_SELECT, data, request_id)
+        self._requests[request_id] = gen.Future()
+        return self._requests[request_id]
 
     @gen.coroutine
-    def get_data(self, data):
-        yield self._write('get', data)
-        return (yield self._read())
+    def send_output_err(self, line):
+        yield self._write(packet.OutPacket.METHOD_STDERR, line)
 
     @gen.coroutine
-    def post_data(self, data):
-        yield self._write('post', data)
+    def send_output_out(self, line):
+        yield self._write(packet.OutPacket.METHOD_STDOUT, line)
 
     @gen.coroutine
-    def post_out(self, content):
-        logging.info("POST OUT: {}".format(content))
-        yield self.post_data({
-            'type': 'out',
-            'content': content
-        })
+    def send_result(self, action, success, points=None, additional_data=None):
+        if action not in (packet.RESULT_ACTION_CHECK, packet.RESULT_ACTION_TRY_IT,
+                          packet.RESULT_ACTION_PRE_TEST, packet.RESULT_ACTION_POST_TEST):
+            raise PacketStructureError('Action is incorrect')
+        data = {
+            'action': action,
+            'success': bool(success)
+        }
+        if points is not None:
+            data['points'] = points
+        if additional_data is not None:
+            data['additional_data'] = additional_data
+        yield self._write(packet.OutPacket.METHOD_RESULT, data)
 
     @gen.coroutine
-    def post_error(self, content):
-        logging.info("ERR OUT: {}".format(content))
-        yield self.post_data({
-            'type': 'error',
-            'content': content
-        })
+    def send_error(self, message, traceback=None):
+        data = {
+            'message': message
+        }
+        if traceback is not None:
+            data['traceback'] = traceback
+        yield self._write(packet.OutPacket.METHOD_ERROR, data)
 
     @gen.coroutine
-    def post_check_fail(self, points=None, description=None):
-        yield self.post_data({
-            'type': 'check_fail',
-            'points': points,
-            'content': description
-        })
+    def send_status(self, status_data):
+        yield self._write(packet.OutPacket.METHOD_STATUS, status_data)
 
     @gen.coroutine
-    def post_check_success(self, points=None, description=None):
-        yield self.post_data({
-            'type': 'check_success',
-            'points': points,
-            'content': description
+    def _confirm_connection(self):
+        """
+        Only after client send connection id, server will start send data.
+        Until that, server will skipp all requests.
+        """
+        yield self._write(packet.OutPacket.METHOD_SET, {
+            self.ATTR_NAME_CONNECTION_ID: self.__user_connection_id,
+            self.ATTR_NAME_DOCKER_ID: self.__docker_id
         })
