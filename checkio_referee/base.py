@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 class RefereeBase(object):
     EXECUTABLE_PATH = None
     TESTS = None
-    FUNCTION_NAME = 'checkio'
+    DEFAULT_FUNCTION_NAME = 'checkio'
+    FUNCTION_NAMES = {}
     CURRENT_ENV = None
     ENV_COVERCODE = None
     VALIDATOR = validators.EqualValidator
@@ -42,6 +43,10 @@ class RefereeBase(object):
 
     def initialize(self):
         pass
+
+    @property
+    def function_name(self):
+        return self.FUNCTION_NAMES.get(self.CURRENT_ENV, self.DEFAULT_FUNCTION_NAME)
 
     @gen.coroutine
     def start(self):
@@ -144,9 +149,9 @@ class RefereeBase(object):
     @gen.coroutine
     def check_test_item(self, test, category_name, test_number):
         yield self.pre_test(test)
-
+        function_name = test.get("function_name") or self.function_name
         result_func = yield self.executor.run_func(
-            function_name=self.FUNCTION_NAME or test["function_name"],
+            function_name=self.function_name,
             args=test.get('input', None),
             exec_name=category_name)
 
@@ -169,7 +174,7 @@ class RefereeBase(object):
     def pre_test(self, test, **kwargs):
         representation = self.CALLED_REPRESENTATIONS.get(self.CURRENT_ENV,
                                                          representations.base_representation)
-        called_str = representation(test, self.FUNCTION_NAME)
+        called_str = representation(test, self.function_name)
         logging.info("PRE_TEST:: Called: {}".format(called_str))
         # TODO: Send data to Editor
 
