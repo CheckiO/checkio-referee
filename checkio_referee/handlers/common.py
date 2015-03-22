@@ -1,0 +1,123 @@
+import logging
+
+from tornado import gen
+
+from checkio_referee import exceptions
+from checkio_referee.handlers.base import BaseHandler
+from checkio_referee.utils import validators
+
+logger = logging.getLogger(__name__)
+
+
+class RunHandler(BaseHandler):
+
+    @gen.coroutine
+    def start(self):
+        self.environment = yield self.get_environment(self.env_name)
+        yield self.environment.run_code(code=self.code)
+        yield self.environment.stop()
+        self.stop()
+
+
+class RunInConsoleHandler(BaseHandler):
+
+    @gen.coroutine
+    def start(self):
+        self.environment = yield self.get_environment(self.env_name)
+        yield self.environment.run_in_console(code=self.code)
+        yield self._continue_run_in_console()
+
+    @gen.coroutine
+    def _continue_run_in_console(self):
+        editor_data = yield self.editor_client.send_select_data(data=['code'])
+        yield self.environment.run_in_console(code=editor_data['code'])
+        yield self._continue_run_in_console()
+
+
+class CheckHandler(BaseHandler):
+    TESTS = None
+
+    DEFAULT_FUNCTION_NAME = 'checkio'
+    FUNCTION_NAMES = {}
+
+    ENV_COVERCODE = None
+    VALIDATOR = validators.EqualValidator
+
+    @property
+    def function_name(self):
+        return self.FUNCTION_NAMES.get(self.env_name, self.DEFAULT_FUNCTION_NAME)
+
+    @gen.coroutine
+    def start(self):
+        logging.info("CheckHandler:: Start checking")
+        assert self.TESTS
+
+        for category_name, tests in sorted(self.TESTS.items()):
+            try:
+                yield self.check_category(self.code, category_name, tests)
+            except exceptions.RefereeExecuteFailed as e:
+                yield self.result_check_fail(points=e.points, additional_data=e.additional_data)
+                return
+
+        yield self.result_check_success()
+        self.stop()
+
+    @gen.coroutine
+    def check_category(self, code, category_name, tests, **kwargs):
+        logging.info("CHECK:: Start Category '{}' checking".format(category_name))
+
+        environment = self.environment = yield self.get_environment(self.env_name)
+        yield environment.set_config(self.get_env_config())
+
+        try:
+            yield environment.run_code(code=code)
+        except exceptions.EnvironmentRunFail:
+            raise exceptions.RefereeCodeRunFailed()
+
+        for test_number, test in enumerate(tests):
+            test_passed = yield self.check_test_item(environment, test, category_name, test_number)
+            if not test_passed:
+                yield environment.stop()
+                description = "Category: {0}. Test {1} Validate Failed".format(category_name,
+                                                                               test_number)
+                raise exceptions.RefereeTestFailed(description=description)
+
+        yield environment.stop()
+
+    @gen.coroutine
+    def check_test_item(self, environment, test, category_name, test_number):
+        function_name = test.get("function_name") or self.function_name
+        params = test.get('input', None)
+        try:
+            result_func = yield environment.run_func(function_name=function_name, params=params)
+        except exceptions.EnvironmentRunFail:
+            description = "Category: {0}. Test {1} Run failed".format(category_name, test_number)
+            raise exceptions.RefereeTestFailed(description=description)
+
+        validator = self.VALIDATOR(test)
+        validator_result = validator.validate(result_func.get("result"))
+        return validator_result.test_passed
+
+    def get_env_config(self, random_seed=None):
+        env_config = {}
+        if self.ENV_COVERCODE is not None and self.ENV_COVERCODE.get(self.env_name) is not None:
+            env_config['cover_code'] = self.ENV_COVERCODE[self.env_name]
+        if random_seed is not None:
+            env_config['random_seed'] = random_seed
+        return env_config
+
+    @gen.coroutine
+    def _result_check(self, success, points=None, additional_data=None):
+        yield self.editor_client.send_check_result(
+            success=success,
+            points=points,
+            additional_data=additional_data
+        )
+
+    @gen.coroutine
+    def result_check_success(self, points=None, additional_data=None):
+        yield self._result_check(True, points, additional_data)
+
+    @gen.coroutine
+    def result_check_fail(self, points=None, additional_data=None):
+        yield self._result_check(False, points, additional_data)

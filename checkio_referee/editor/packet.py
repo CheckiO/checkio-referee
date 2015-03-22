@@ -1,13 +1,10 @@
 from tornado.escape import json_encode, json_decode
 
-from .exceptions import PacketStructureError
+from checkio_referee.exceptions import EditorPacketStructureError
 
 
-# TODO: is it all?
 RESULT_ACTION_CHECK = 'check'
 RESULT_ACTION_TRY_IT = 'try_it'
-RESULT_ACTION_PRE_TEST = 'pre_test'
-RESULT_ACTION_POST_TEST = 'post_test'
 
 
 class PacketBase(object):
@@ -16,7 +13,7 @@ class PacketBase(object):
 
     def __init__(self, method, data, request_id=None):
         if method not in self.AVAILABLE_METHODS:
-            raise PacketStructureError('Packet method {} not allowed'.format(method))
+            raise EditorPacketStructureError('Packet method {} not allowed'.format(method))
         self.method = method
         self.data = data
         self.request_id = request_id
