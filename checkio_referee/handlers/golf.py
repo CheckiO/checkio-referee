@@ -12,6 +12,8 @@ class CodeGolfCheckHandler(CheckHandler):
     MAX_CODE_LENGTHS = {}  # key as environment name
     BASE_POINTS = 0
 
+    REFEREE_SETTINGS_PRIORITY = ('DEFAULT_MAX_CODE_LENGTH', 'MAX_CODE_LENGTHS', 'BASE_POINTS')
+
     @property
     def code_length(self):
         return len(self.code)

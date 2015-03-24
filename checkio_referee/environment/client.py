@@ -27,7 +27,6 @@ class EnvironmentClient(object):
         yield self.write(data)
         response = yield self.read_message()
         if response.get('status') != 'success':
-            import ipdb; ipdb.set_trace()
             raise exceptions.EnvironmentRunFail(response)
         return response
 

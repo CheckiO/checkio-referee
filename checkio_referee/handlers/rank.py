@@ -12,6 +12,8 @@ DEFAULT_CATEGORY_POINTS = dict(("Rank_{:02d}".format(i), 100) for i in range(1, 
 class RankCheckHandler(CheckHandler):
     CATEGORY_POINTS = DEFAULT_CATEGORY_POINTS
 
+    REFEREE_SETTINGS_PRIORITY = ('CATEGORY_POINTS',)
+
     @gen.coroutine
     def start(self):
         logger.info("RankCheckHandler:: Start checking")

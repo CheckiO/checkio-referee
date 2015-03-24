@@ -4,6 +4,7 @@ import sys
 from tornado import gen
 from tornado.ioloop import IOLoop
 
+from checkio_referee.handlers import common
 from checkio_referee.editor import EditorClient
 from checkio_referee.environment import EnvironmentsController
 
@@ -14,11 +15,17 @@ class RefereeBase(object):
 
     ENVIRONMENTS = None
 
-    HANDLERS = None
     HANDLER_ACTION_RUN = 'run'
     HANDLER_ACTION_CHECK = 'check'
     HANDLER_ACTION_TRY_IT = 'try_it'
     HANDLER_ACTION_RUN_IN_CONSOLE = 'run_in_console'
+
+    HANDLERS = {
+        HANDLER_ACTION_RUN: common.RunHandler,
+        HANDLER_ACTION_CHECK: common.CheckHandler,
+        # HANDLER_ACTION_TRY_IT: common.TryItHandler,  # TODO:
+        HANDLER_ACTION_RUN_IN_CONSOLE: common.RunInConsoleHandler,
+    }
 
     AVAILABLE_HANDLER_ACTIONS = (HANDLER_ACTION_RUN, HANDLER_ACTION_CHECK, HANDLER_ACTION_TRY_IT,
                                  HANDLER_ACTION_RUN_IN_CONSOLE)
@@ -79,8 +86,7 @@ class RefereeBase(object):
             raise Exception("Environment {} is not supported in this mission")
 
         code = editor_data.get('code')
-        self._handler = HandlerClass(env_name, code, self.editor_client,
-                                     self.environments_controller)
+        self._handler = HandlerClass(env_name, code, self.editor_client, self)
         self._handler.add_stop_callback(self.stop)
         yield self._handler.start()
         

@@ -43,6 +43,14 @@ class CheckHandler(BaseHandler):
     ENV_COVERCODE = None
     VALIDATOR = validators.EqualValidator
 
+    REFEREE_SETTINGS_PRIORITY = (
+        'TESTS',
+        'DEFAULT_FUNCTION_NAME',
+        'FUNCTION_NAMES',
+        'ENV_COVERCODE',
+        'VALIDATOR'
+    )
+
     @property
     def function_name(self):
         return self.FUNCTION_NAMES.get(self.env_name, self.DEFAULT_FUNCTION_NAME)

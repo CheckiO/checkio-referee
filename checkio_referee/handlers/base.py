@@ -8,15 +8,30 @@ logger = logging.getLogger(__name__)
 
 class BaseHandler(object):
 
-    def __init__(self, env_name, code, editor_client, environments_controller):
+    REFEREE_SETTINGS_PRIORITY = None
+
+    def __init__(self, env_name, code, editor_client, referee):
         self.env_name = env_name
         self.code = code
         self.editor_client = editor_client
-        self._environments_controller = environments_controller
+        self._referee = referee
 
         self.environment = None
         self._is_stopping = None
         self._stop_callback = None
+
+    def __getattribute__(self, attr):
+        referee_priority = object.__getattribute__(self, 'REFEREE_SETTINGS_PRIORITY')
+        if referee_priority is not None and attr in referee_priority:
+            referee_value = getattr(self._referee, attr, None)
+            if referee_value is not None:
+                return referee_value
+        return object.__getattribute__(self, attr)
+
+    def __getattr__(self, attr):
+        if attr == attr.upper():
+            return getattr(self._referee, attr)
+        return super().__getattr__()
 
     @gen.coroutine
     def start(self):
@@ -37,7 +52,7 @@ class BaseHandler(object):
 
     @gen.coroutine
     def get_environment(self, env_name):
-        environment = yield self._environments_controller.get_environment(
+        environment = yield self._referee.environments_controller.get_environment(
             env_name, on_stdout=self.on_stdout, on_stderr=self.on_stderr)
         return environment
 
