@@ -1,10 +1,12 @@
 import logging
 
 from tornado import gen
+from tornado.ioloop import IOLoop
 
 from checkio_referee import exceptions
 from checkio_referee.handlers.base import BaseHandler
 from checkio_referee.utils import validators
+from checkio_referee.utils.representations import base_representation
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +45,15 @@ class CheckHandler(BaseHandler):
     ENV_COVERCODE = None
     VALIDATOR = validators.EqualValidator
 
+    CALLED_REPRESENTATIONS = {}
+
     REFEREE_SETTINGS_PRIORITY = (
         'TESTS',
         'DEFAULT_FUNCTION_NAME',
         'FUNCTION_NAMES',
         'ENV_COVERCODE',
-        'VALIDATOR'
+        'VALIDATOR',
+        'CALLED_REPRESENTATIONS',
     )
 
     @property
@@ -94,6 +99,9 @@ class CheckHandler(BaseHandler):
 
     @gen.coroutine
     def check_test_item(self, environment, test, category_name, test_number):
+        io_loop = IOLoop.current()
+        io_loop.spawn_callback(self.pre_test, test=test)
+
         function_name = test.get("function_name") or self.function_name
         params = test.get('input', None)
         try:
@@ -104,7 +112,32 @@ class CheckHandler(BaseHandler):
 
         validator = self.VALIDATOR(test)
         validator_result = validator.validate(result_func.get("result"))
+
+        io_loop.spawn_callback(self.post_test, test=test, category_name=category_name,
+                               test_number=test_number)
+
         return validator_result.test_passed
+
+    @gen.coroutine
+    def pre_test(self, test):
+        representation = self.CALLED_REPRESENTATIONS.get(self.env_name, base_representation)
+        called_str = representation(test, self.function_name)
+        logging.info("PRE_TEST:: Called: {}".format(called_str))
+        yield self.editor_client.send_pre_test({
+            'representation': called_str
+        })
+
+    @gen.coroutine
+    def post_test(self, test, validator_result, category_name, test_number):
+        logging.info("POST_TEST:: Check result for category {0}, test {1}: {2}".format(
+            category_name,
+            test_number,
+            validator_result.test_passed
+        ))
+        additional_data = validator_result.additional_data
+        if additional_data:
+            logging.info("VALIDATOR:: Data: {}".format(additional_data))
+            yield self.editor_client.send_post_test(additional_data)
 
     def get_env_config(self, random_seed=None):
         env_config = {}

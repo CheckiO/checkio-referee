@@ -42,9 +42,11 @@ class OutPacket(PacketBase):
     METHOD_ERROR = 'error'
     METHOD_STATUS = 'status'
     METHOD_SET = 'set'
+    METHOD_PRE_TEST = 'pre_test'
+    METHOD_POST_TEST = 'post_test'
 
     AVAILABLE_METHODS = (METHOD_SELECT, METHOD_STDOUT, METHOD_STDERR, METHOD_RESULT, METHOD_ERROR,
-                         METHOD_STATUS, METHOD_SET)
+                         METHOD_STATUS, METHOD_SET, METHOD_PRE_TEST, METHOD_POST_TEST)
 
 
 class InPacket(PacketBase):
