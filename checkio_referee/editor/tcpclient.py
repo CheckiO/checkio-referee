@@ -3,15 +3,13 @@ import uuid
 
 from tornado.tcpclient import TCPClient
 from tornado import gen
-from tornado.ioloop import IOLoop
 
+from checkio_referee.editor import packet
+from checkio_referee.exceptions import EditorPacketStructureError
 from checkio_referee.utils.signals import Signal
 
-from .exceptions import PacketStructureError
-from . import packet
 
-
-class UserClient(object):
+class EditorClient(object):
     """
     Client for connect Referee and server worker (send and request info).
     Protocol description: https://checkio.atlassian.net/wiki/pages/viewpage.action?pageId=18219162
@@ -21,12 +19,12 @@ class UserClient(object):
     ATTR_NAME_CONNECTION_ID = 'user_connection_id'
     ATTR_NAME_DOCKER_ID = 'docker_id'
 
-    def __init__(self, host, port, user_connection_id, docker_id, io_loop=None):
+    def __init__(self, host, port, user_connection_id, docker_id, io_loop):
         self.__host = host
         self.__port = port
         self.__user_connection_id = user_connection_id
         self.__docker_id = docker_id
-        self._io_loop = io_loop or IOLoop.current()
+        self._io_loop = io_loop
         self.client = TCPClient(io_loop=self._io_loop)
         self._stream = None
         self._requests = dict()
@@ -57,7 +55,7 @@ class UserClient(object):
     @gen.coroutine
     def _write(self, method, data=None, request_id=None):
         if self._stream.closed():
-            raise PacketStructureError('Connection is closed')
+            raise EditorPacketStructureError('Connection is closed')
 
         message = packet.OutPacket(method, data, request_id).encode()
         try:
@@ -65,7 +63,7 @@ class UserClient(object):
         except Exception as e:
             logging.error(e, exc_info=True)
         else:
-            logging.debug('UserClient:: send: {}'.format(message))
+            logging.debug('EditorClient:: send: {}'.format(message))
 
     def _read(self):
         self._stream.read_until(self.TERMINATOR, self._on_data)
@@ -77,7 +75,7 @@ class UserClient(object):
         else:
             try:
                 pkt = packet.InPacket.decode(data)
-            except PacketStructureError as e:
+            except EditorPacketStructureError as e:
                 logging.error(e, exc_info=True)
             else:
                 if pkt.request_id is not None:
@@ -102,18 +100,33 @@ class UserClient(object):
         return self._requests[request_id]
 
     @gen.coroutine
-    def send_output_err(self, line):
+    def send_stderr(self, line):
         yield self._write(packet.OutPacket.METHOD_STDERR, line)
 
     @gen.coroutine
-    def send_output_out(self, line):
+    def send_stdout(self, line):
         yield self._write(packet.OutPacket.METHOD_STDOUT, line)
 
     @gen.coroutine
+    def send_check_result(self, success, points=None, additional_data=None):
+        yield self.send_result(packet.RESULT_ACTION_CHECK, success, points, additional_data)
+
+    @gen.coroutine
+    def send_try_it_result(self, success, points=None, additional_data=None):
+        yield self.send_result(packet.RESULT_ACTION_TRY_IT, success, points, additional_data)
+
+    @gen.coroutine
+    def send_pre_test(self, data):
+        yield self._write(packet.OutPacket.METHOD_PRE_TEST, data)
+
+    @gen.coroutine
+    def send_post_test(self, data):
+        yield self._write(packet.OutPacket.METHOD_POST_TEST, data)
+
+    @gen.coroutine
     def send_result(self, action, success, points=None, additional_data=None):
-        if action not in (packet.RESULT_ACTION_CHECK, packet.RESULT_ACTION_TRY_IT,
-                          packet.RESULT_ACTION_PRE_TEST, packet.RESULT_ACTION_POST_TEST):
-            raise PacketStructureError('Action is incorrect')
+        if action not in (packet.RESULT_ACTION_CHECK, packet.RESULT_ACTION_TRY_IT):
+            raise EditorPacketStructureError('Action is incorrect')
         data = {
             'action': action,
             'success': bool(success)

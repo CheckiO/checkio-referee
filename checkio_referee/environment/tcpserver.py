@@ -5,27 +5,30 @@ from tornado.escape import json_encode, json_decode
 from tornado.tcpserver import TCPServer
 
 
-class ExecutorTCPServer(TCPServer):
+class EnvironmentsTCPServer(TCPServer):
 
-    PORT = 8383  # TODO: to settings
+    PORT = 8383
 
-    def __init__(self, controller,  *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.controller = controller
         self.stream_handler = None
+        self.connection_message_callback = None
 
     def handle_stream(self, stream, address):
-        self.stream_handler = StreamHandler(stream, address, self.controller)
+        self.stream_handler = StreamHandler(stream, address, self)
+
+    def set_connection_message_callback(self, callback):
+        self.connection_message_callback = callback
 
 
 class StreamHandler(object):
 
     terminator = b'\0'
 
-    def __init__(self, stream, address, controller):
+    def __init__(self, stream, address, server):
         self.stream = stream
         self.address = address
-        self.controller = controller
+        self.server = server
         self._is_connection_closed = False
         self.stream.set_close_callback(self._on_client_connection_close)
         self._read_connection_message()
@@ -55,7 +58,7 @@ class StreamHandler(object):
 
     def _on_connection_message(self, data):
         data = self._data_decode(data)
-        self.controller.on_connection_message(data, self)
+        self.server.connection_message_callback(data, self)
 
     @gen.coroutine
     def write(self, message):

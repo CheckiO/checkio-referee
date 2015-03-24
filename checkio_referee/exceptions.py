@@ -21,3 +21,19 @@ class RefereeTestFailed(RefereeExecuteFailed):
 
 class RefereeCodeRunFailed(RefereeExecuteFailed):
     pass
+
+
+class CheckioEnvironmentError(Exception):
+    pass
+
+
+class EnvironmentRunFail(CheckioEnvironmentError):
+    pass
+
+
+class EditorError(Exception):
+    pass
+
+
+class EditorPacketStructureError(EditorError):
+    pass
