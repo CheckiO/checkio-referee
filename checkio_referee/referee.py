@@ -1,5 +1,6 @@
 import logging
 import sys
+from copy import deepcopy
 
 from tornado import gen
 from tornado.ioloop import IOLoop
@@ -29,6 +30,8 @@ class RefereeBase(object):
 
     AVAILABLE_HANDLER_ACTIONS = (HANDLER_ACTION_RUN, HANDLER_ACTION_CHECK, HANDLER_ACTION_TRY_IT,
                                  HANDLER_ACTION_RUN_IN_CONSOLE)
+
+    EDITOR_LOAD_ARGS = ('code', 'action', 'env_name')
 
     def __init__(self, server_host, server_port, user_connection_id, docker_id, io_loop=None):
         assert self.ENVIRONMENTS
@@ -73,7 +76,7 @@ class RefereeBase(object):
 
     @gen.coroutine
     def on_ready(self):
-        editor_data = yield self.editor_client.send_select_data(['code', 'action', 'env_name'])
+        editor_data = yield self.editor_client.send_select_data(self.EDITOR_LOAD_ARGS)
         logger.debug("Initial editor data {}".format(editor_data))
 
         action = editor_data['action']
@@ -81,12 +84,7 @@ class RefereeBase(object):
         if HandlerClass is None:
             raise Exception("Handler for action {} is not available")
 
-        env_name = editor_data.get('env_name')
-        if not self.environments_controller.is_valid_env(env_name):
-            raise Exception("Environment {} is not supported in this mission")
-
-        code = editor_data.get('code')
-        self._handler = HandlerClass(env_name, code, self.editor_client, self)
+        self._handler = HandlerClass(editor_data, self.editor_client, self)
         self._handler.add_stop_callback(self.stop)
         yield self._handler.start()
         
@@ -101,10 +99,10 @@ class RefereeBase(object):
 
 
 class RefereeCodeGolf(RefereeBase):
-    pass
+    HANDLERS = deepcopy(RefereeBase.HANDLERS)
 RefereeCodeGolf.set_handler(RefereeBase.HANDLER_ACTION_CHECK, golf.CodeGolfCheckHandler)
 
 
 class RefereeRank(RefereeBase):
-    pass
+    HANDLERS = deepcopy(RefereeBase.HANDLERS)
 RefereeRank.set_handler(RefereeBase.HANDLER_ACTION_CHECK, rank.RankCheckHandler)

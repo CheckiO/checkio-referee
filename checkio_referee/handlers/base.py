@@ -10,9 +10,12 @@ class BaseHandler(object):
 
     REFEREE_SETTINGS_PRIORITY = None
 
-    def __init__(self, env_name, code, editor_client, referee):
-        self.env_name = env_name
-        self.code = code
+    def __init__(self, editor_data, editor_client, referee):
+        self.env_name = editor_data.get('env_name')
+        if not referee.environments_controller.is_valid_env(self.env_name):
+            raise Exception("Environment {} is not supported in this mission")
+
+        self.code = editor_data.get('code')
         self.editor_client = editor_client
         self._referee = referee
 

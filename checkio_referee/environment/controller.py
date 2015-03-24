@@ -26,8 +26,6 @@ class SingletonDecorator:
 @SingletonDecorator
 class EnvironmentsController(object):
 
-    EXECUTABLE_FILE_NAME = 'run.sh'
-
     def __init__(self, environments):
         self.environments = environments
         self._connections = {}
@@ -43,9 +41,8 @@ class EnvironmentsController(object):
     def get_executable_path(self, env_name):
         return self.environments[env_name]
 
-    def start_env(self, executable_path, on_stdout, on_stderr):
+    def start_env(self, executable, on_stdout, on_stderr):
         environment_id = uuid.uuid4().hex
-        executable = os.path.join(executable_path, self.EXECUTABLE_FILE_NAME)
         args = [
             executable,
             str(self.server.PORT),

@@ -113,8 +113,8 @@ class CheckHandler(BaseHandler):
         validator = self.VALIDATOR(test)
         validator_result = validator.validate(result_func.get("result"))
 
-        io_loop.spawn_callback(self.post_test, test=test, category_name=category_name,
-                               test_number=test_number)
+        io_loop.spawn_callback(self.post_test, test=test, validator_result=validator_result,
+                               category_name=category_name, test_number=test_number)
 
         return validator_result.test_passed
 
