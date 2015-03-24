@@ -4,7 +4,7 @@ import sys
 from tornado import gen
 from tornado.ioloop import IOLoop
 
-from checkio_referee.handlers import common
+from checkio_referee.handlers import common, golf, rank
 from checkio_referee.editor import EditorClient
 from checkio_referee.environment import EnvironmentsController
 
@@ -98,3 +98,13 @@ class RefereeBase(object):
         if self._handler is not None:
             self._handler.stop()
         sys.exit()
+
+
+class RefereeCodeGolf(RefereeBase):
+    pass
+RefereeCodeGolf.set_handler(RefereeBase.HANDLER_ACTION_CHECK, golf.CodeGolfCheckHandler)
+
+
+class RefereeRank(RefereeBase):
+    pass
+RefereeRank.set_handler(RefereeBase.HANDLER_ACTION_CHECK, rank.RankCheckHandler)
