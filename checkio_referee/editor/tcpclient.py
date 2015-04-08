@@ -116,6 +116,10 @@ class EditorClient(object):
         yield self.send_result(packet.RESULT_ACTION_TRY_IT, success, points, additional_data)
 
     @gen.coroutine
+    def send_run_finish(self):
+        yield self.send_result(packet.RESULT_ACTION_RUN, success=True)
+
+    @gen.coroutine
     def send_pre_test(self, data):
         yield self._write(packet.OutPacket.METHOD_PRE_TEST, data)
 
@@ -125,8 +129,10 @@ class EditorClient(object):
 
     @gen.coroutine
     def send_result(self, action, success, points=None, additional_data=None):
-        if action not in (packet.RESULT_ACTION_CHECK, packet.RESULT_ACTION_TRY_IT):
-            raise EditorPacketStructureError('Action is incorrect')
+        if action not in (packet.RESULT_ACTION_CHECK, packet.RESULT_ACTION_TRY_IT,
+                          packet.RESULT_ACTION_RUN):
+            raise EditorPacketStructureError(
+                'REFEREE:: Sent to editor action is incorrect: {}'.format(action))
         data = {
             'action': action,
             'success': bool(success)

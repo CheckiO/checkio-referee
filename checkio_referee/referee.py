@@ -68,7 +68,7 @@ class RefereeBase(object):
             yield self.on_ready()
         except Exception as e:
             logger.error(e, exc_info=True)
-            self.editor_client.send_error(e, traceback=sys.exc_info())
+            self.editor_client.send_error(str(e), traceback=str(sys.exc_info()))
             self.stop()
 
     def on_close_user_connection(self):
