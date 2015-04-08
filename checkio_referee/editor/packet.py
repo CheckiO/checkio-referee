@@ -5,6 +5,7 @@ from checkio_referee.exceptions import EditorPacketStructureError
 
 RESULT_ACTION_CHECK = 'check'
 RESULT_ACTION_TRY_IT = 'try_it'
+RESULT_ACTION_RUN = 'run'
 
 
 class PacketBase(object):

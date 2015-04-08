@@ -18,6 +18,7 @@ class RunHandler(BaseHandler):
         self.environment = yield self.get_environment(self.env_name)
         yield self.environment.run_code(code=self.code)
         yield self.environment.stop()
+        yield self.editor_client.send_run_finish()
         self.stop()
 
 
