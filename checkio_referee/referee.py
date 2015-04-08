@@ -41,6 +41,8 @@ class RefereeBase(object):
 
         self.editor_client = EditorClient(server_host, server_port, user_connection_id, docker_id,
                                           self.__io_loop)
+
+        self.editor_client.add_cancel_callback(self._stop_signal_receiver)
         self.editor_connected = None
         self._handler = None
 
@@ -96,6 +98,9 @@ class RefereeBase(object):
         if self._handler is not None:
             self._handler.stop()
         sys.exit()
+
+    def _stop_signal_receiver(self, signal, data=None):
+        self.stop()
 
 
 class RefereeCodeGolf(RefereeBase):

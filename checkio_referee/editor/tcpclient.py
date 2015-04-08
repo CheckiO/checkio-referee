@@ -86,6 +86,9 @@ class EditorClient(object):
                 signal.send(data=pkt.data)
         self._read()
 
+    def add_cancel_callback(self, callback):
+        self.add_data_callback(packet.InPacket.METHOD_CANCEL, callback)
+
     def add_data_callback(self, request_method, callback):
         if request_method not in self._requests_signals.keys():
             raise Exception('Undefined request method {}'.format(request_method))
