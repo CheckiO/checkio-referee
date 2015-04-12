@@ -82,12 +82,12 @@ class RefereeBase(object):
         action = editor_data['action']
         HandlerClass = self.HANDLERS.get(action)
         if HandlerClass is None:
-            raise Exception("Handler for action {} is not available")
+            raise Exception("Handler for action {} is not available".format(action))
 
         self._handler = HandlerClass(editor_data, self.editor_client, self)
         self._handler.add_stop_callback(self.stop)
         yield self._handler.start()
-        
+
     @property
     def environments_controller(self):
         return EnvironmentsController(self.ENVIRONMENTS)
