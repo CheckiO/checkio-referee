@@ -18,7 +18,7 @@ class RunHandler(BaseHandler):
         self.environment = yield self.get_environment(self.env_name)
         yield self.environment.run_code(code=self.code)
         yield self.environment.stop()
-        yield self.editor_client.send_run_finish()
+        yield self.editor_client.send_run_finish(code=self.code)
         self.stop()
 
 
@@ -152,6 +152,7 @@ class CheckHandler(BaseHandler):
     def _result_check(self, success, points=None, additional_data=None):
         yield self.editor_client.send_check_result(
             success=success,
+            code=self.code,
             points=points,
             additional_data=additional_data
         )
