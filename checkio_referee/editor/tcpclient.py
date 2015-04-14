@@ -111,16 +111,28 @@ class EditorClient(object):
         yield self._write(packet.OutPacket.METHOD_STDOUT, line)
 
     @gen.coroutine
-    def send_check_result(self, success, points=None, additional_data=None):
-        yield self.send_result(packet.RESULT_ACTION_CHECK, success, points, additional_data)
+    def send_check_result(self, success, code, points=None, additional_data=None):
+        yield self.send_result(
+            action=packet.RESULT_ACTION_CHECK,
+            success=success,
+            code=code,
+            points=points,
+            additional_data=additional_data
+        )
 
     @gen.coroutine
-    def send_try_it_result(self, success, points=None, additional_data=None):
-        yield self.send_result(packet.RESULT_ACTION_TRY_IT, success, points, additional_data)
+    def send_try_it_result(self, success, code, points=None, additional_data=None):
+        yield self.send_result(
+            action=packet.RESULT_ACTION_TRY_IT,
+            success=success,
+            code=code,
+            points=points,
+            additional_data=additional_data
+        )
 
     @gen.coroutine
-    def send_run_finish(self):
-        yield self.send_result(packet.RESULT_ACTION_RUN, success=True)
+    def send_run_finish(self, code):
+        yield self.send_result(action=packet.RESULT_ACTION_RUN, success=True, code=code)
 
     @gen.coroutine
     def send_pre_test(self, data):
@@ -131,14 +143,15 @@ class EditorClient(object):
         yield self._write(packet.OutPacket.METHOD_POST_TEST, data)
 
     @gen.coroutine
-    def send_result(self, action, success, points=None, additional_data=None):
+    def send_result(self, action, success, code, points=None, additional_data=None):
         if action not in (packet.RESULT_ACTION_CHECK, packet.RESULT_ACTION_TRY_IT,
                           packet.RESULT_ACTION_RUN):
             raise EditorPacketStructureError(
                 'REFEREE:: Sent to editor action is incorrect: {}'.format(action))
         data = {
             'action': action,
-            'success': bool(success)
+            'success': bool(success),
+            'code': code,
         }
         if points is not None:
             data['points'] = points
