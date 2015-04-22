@@ -16,7 +16,10 @@ class RunHandler(BaseHandler):
     @gen.coroutine
     def start(self):
         self.environment = yield self.get_environment(self.env_name)
-        yield self.environment.run_code(code=self.code)
+        try:
+            yield self.environment.run_code(code=self.code)
+        except exceptions.EnvironmentRunFail:
+            pass
         yield self.environment.stop()
         yield self.editor_client.send_run_finish(code=self.code)
         self.stop()
@@ -27,14 +30,22 @@ class RunInConsoleHandler(BaseHandler):
     @gen.coroutine
     def start(self):
         self.environment = yield self.get_environment(self.env_name)
-        yield self.environment.run_in_console(code=self.code)
-        yield self._continue_run_in_console()
+        try:
+            yield self.environment.run_in_console(code=self.code)
+        except exceptions.EnvironmentRunFail:
+            pass
+        else:
+            yield self._continue_run_in_console()
 
     @gen.coroutine
     def _continue_run_in_console(self):
         editor_data = yield self.editor_client.send_select_data(data=['code'])
-        yield self.environment.run_in_console(code=editor_data['code'])
-        yield self._continue_run_in_console()
+        try:
+            yield self.environment.run_in_console(code=editor_data['code'])
+        except exceptions.EnvironmentRunFail:
+            pass
+        else:
+            yield self._continue_run_in_console()
 
 
 class CheckHandler(BaseHandler):

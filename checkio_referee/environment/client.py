@@ -26,7 +26,7 @@ class EnvironmentClient(object):
     def _request(self, data):
         yield self.write(data)
         response = yield self.read_message()
-        if response.get('status') != 'success':
+        if response is None or response.get('status') != 'success':
             raise exceptions.EnvironmentRunFail(response)
         return response
 
