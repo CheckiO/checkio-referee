@@ -35,7 +35,13 @@ class BaseHandler(object):
     def __getattr__(self, attr):
         if attr == attr.upper():
             return getattr(self._referee, attr)
-        return super().__getattr__()
+        try:
+            return super().__getattr__()
+        except AttributeError as error:
+            if error.args[0] == "'super' object has no attribute '__getattr__'":
+                raise AttributeError('Object {} does not have attribute {}'. format(self, attr))
+            else:
+                raise
 
     @gen.coroutine
     def start(self):
