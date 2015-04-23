@@ -92,7 +92,9 @@ class RefereeBase(object):
 
     @property
     def environments_controller(self):
-        return EnvironmentsController(self.ENVIRONMENTS)
+        if not hasattr(self, '_environments_controller'):
+            setattr(self, '_environments_controller', EnvironmentsController(self.ENVIRONMENTS))
+        return getattr(self, '_environments_controller')
 
     def stop(self):
         if self._handler is not None:

@@ -12,19 +12,9 @@ from checkio_referee.environment.tcpserver import EnvironmentsTCPServer
 from checkio_referee.environment.client import EnvironmentClient
 
 
-class SingletonDecorator:
-    def __init__(self, cls):
-        self.cls = cls
-        self.instance = None
-
-    def __call__(self, *args, **kwargs):
-        if self.instance is None:
-            self.instance = self.cls(*args, **kwargs)
-        return self.instance
-
-
-@SingletonDecorator
 class EnvironmentsController(object):
+
+    ENVIRONMENT_CLIENT_CLS = EnvironmentClient
 
     def __init__(self, environments):
         self.environments = environments
@@ -69,7 +59,7 @@ class EnvironmentsController(object):
         if data.get('status') != 'connected':
             raise CheckioEnvironmentError("Wrong connection message {}".format(str(data)))
         environment_id = data['environment_id']
-        environment_client = EnvironmentClient(stream, environment_id)
+        environment_client = self.ENVIRONMENT_CLIENT_CLS(stream, environment_id)
         environment_client.set_on_stop_callback(self.on_environment_stopped)
         logging.info("EnvironmentsController:: connected {}".format(environment_id))
         self._connections[environment_id].set_result(environment_client)
