@@ -2,6 +2,7 @@ import logging
 
 from tornado import gen
 from tornado.escape import json_encode, json_decode
+from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 
 
@@ -50,7 +51,10 @@ class StreamHandler(object):
 
     @gen.coroutine
     def read_message(self):
-        data = yield self.stream.read_until(self.terminator)
+        try:
+            data = yield self.stream.read_until(self.terminator)
+        except StreamClosedError:
+            return
         return self._data_decode(data)
 
     def _read_connection_message(self):
