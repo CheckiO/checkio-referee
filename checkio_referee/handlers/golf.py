@@ -11,12 +11,24 @@ class CodeGolfCheckHandler(CheckHandler):
     DEFAULT_MAX_CODE_LENGTH = 1000
     MAX_CODE_LENGTHS = {}  # key as environment name
     BASE_POINTS = 0
+    COMMENT_MARKS = {
+        "javascript": "//",
+        "python": "#"
+    }
 
-    REFEREE_SETTINGS_PRIORITY = ('DEFAULT_MAX_CODE_LENGTH', 'MAX_CODE_LENGTHS', 'BASE_POINTS')
+    REFEREE_SETTINGS_PRIORITY = ('DEFAULT_MAX_CODE_LENGTH', 'MAX_CODE_LENGTHS',
+                                 'BASE_POINTS', 'COMMENT_MARKS')
 
     @property
     def code_length(self):
-        return len(self.code)
+        lines = self.code.replace("\r\n", "\n").split("\n")
+        result = 0
+        comment_mark = self.COMMENT_MARKS.get(self.env_name)
+        for line in lines:
+            if comment_mark and line.lstrip().startswith(comment_mark):
+                continue
+            result += len(line) + 1
+        return result - 1
 
     @gen.coroutine
     def result_check_success(self, points=None, additional_data=None):
