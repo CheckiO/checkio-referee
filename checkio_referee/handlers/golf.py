@@ -16,8 +16,9 @@ class CodeGolfCheckHandler(CheckHandler):
         "python": "#"
     }
 
-    REFEREE_SETTINGS_PRIORITY = ('DEFAULT_MAX_CODE_LENGTH', 'MAX_CODE_LENGTHS',
-                                 'BASE_POINTS', 'COMMENT_MARKS')
+    REFEREE_SETTINGS_PRIORITY = (CheckHandler.REFEREE_SETTINGS_PRIORITY +
+                                 ('DEFAULT_MAX_CODE_LENGTH', 'MAX_CODE_LENGTHS',
+                                  'BASE_POINTS', 'COMMENT_MARKS'))
 
     @property
     def code_length(self):
