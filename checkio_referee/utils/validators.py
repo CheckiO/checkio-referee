@@ -28,6 +28,8 @@ class FloatEqualValidator(BaseValidator):
     PRECISION = 3
 
     def validate(self, outer_result):
+        if not isinstance(outer_result, (int, float)):
+            return ValidatorResult(False, "The result should be a float or integer.")
         diff = abs(self._test.get("answer", 0) - outer_result)
         return ValidatorResult(diff <= 0.1 ** self.PRECISION, diff)
 
