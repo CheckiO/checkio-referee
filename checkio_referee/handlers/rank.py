@@ -29,6 +29,9 @@ class RankCheckHandler(CheckHandler):
                 else:
                     yield self.result_check_fail(additional_data=e.additional_data)
                 return
+            except Exception:
+                yield self.result_check_fail()
+                raise
             points += self.CATEGORY_POINTS.get(category_name, 0)
 
         yield self.result_check_success(points=points)
