@@ -83,6 +83,9 @@ class CheckHandler(BaseHandler):
             except exceptions.RefereeExecuteFailed as e:
                 yield self.result_check_fail(points=e.points, additional_data=e.additional_data)
                 return
+            except Exception:
+                yield self.result_check_fail()
+                raise
 
         yield self.result_check_success()
         self.stop()
