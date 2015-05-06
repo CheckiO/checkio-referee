@@ -125,11 +125,13 @@ class CheckHandler(BaseHandler):
             description = "Category: {0}. Test {1} Run failed".format(category_name, test_number)
             raise exceptions.RefereeTestFailed(description=description)
 
+        run_result = result_func.get("result")
         validator = self.VALIDATOR(test)
-        validator_result = validator.validate(result_func.get("result"))
+        validator_result = validator.validate(run_result)
 
         io_loop.spawn_callback(self.post_test, test=test, validator_result=validator_result,
-                               category_name=category_name, test_number=test_number)
+                               category_name=category_name, test_number=test_number,
+                               run_result=run_result)
 
         return validator_result.test_passed
 
@@ -143,16 +145,20 @@ class CheckHandler(BaseHandler):
         })
 
     @gen.coroutine
-    def post_test(self, test, validator_result, category_name, test_number):
-        logging.info("POST_TEST:: Check result for category {0}, test {1}: {2}".format(
+    def post_test(self, test, validator_result, category_name, test_number, run_result):
+        logging.info("POST_TEST:: Check result for category {0}, test {1}: {2}\n"
+                     "VALIDATOR: {3}".format(
             category_name,
             test_number,
-            validator_result.test_passed
+            validator_result.test_passed,
+            validator_result.additional_data
         ))
-        additional_data = validator_result.additional_data
-        if additional_data:
-            logging.info("VALIDATOR:: Data: {}".format(additional_data))
-            yield self.editor_client.send_post_test(additional_data)
+        yield self.editor_client.send_post_test({
+            'actual_result': run_result,
+            'expected_result': test.get('answer'),
+            'test_passed': validator_result.test_passed,
+            'additional_data': validator_result.additional_data
+        })
 
     def get_env_config(self, random_seed=None):
         env_config = {}
