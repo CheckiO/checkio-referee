@@ -16,6 +16,8 @@ class RunHandler(BaseHandler):
     @gen.coroutine
     def start(self):
         self.environment = yield self.get_environment(self.env_name)
+        if self.env_name.startswith('python'):
+            yield self.environment.set_config(env_config=dict(global_name='__main__'))
         try:
             yield self.environment.run_code(code=self.code)
         except exceptions.EnvironmentRunFail:
@@ -30,6 +32,8 @@ class RunInConsoleHandler(BaseHandler):
     @gen.coroutine
     def start(self):
         self.environment = yield self.get_environment(self.env_name)
+        if self.env_name.startswith('python'):
+            yield self.environment.set_config(env_config=dict(global_name='__main__'))
         try:
             yield self.environment.run_in_console(code=self.code)
         except exceptions.EnvironmentRunFail:
