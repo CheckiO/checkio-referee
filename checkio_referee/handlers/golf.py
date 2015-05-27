@@ -13,7 +13,7 @@ class CodeGolfCheckHandler(CheckHandler):
     BASE_POINTS = 0
     COMMENT_MARKS = {
         "javascript": "//",
-        "python": "#"
+        "python_3": "#"
     }
 
     REFEREE_SETTINGS_PRIORITY = (CheckHandler.REFEREE_SETTINGS_PRIORITY +
