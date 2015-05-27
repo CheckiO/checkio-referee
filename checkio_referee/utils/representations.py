@@ -16,7 +16,7 @@ def ext_str(data) -> str:
 
 
 def base_representation(test, function_name):
-    return "{}({})".format(function_name, test["input"])
+    return "{}({})".format(function_name, ext_str(test["input"]))
 
 
 def unwrap_arg_representation(test, function_name):
