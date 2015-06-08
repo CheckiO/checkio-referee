@@ -77,8 +77,6 @@ class CheckHandler(BaseHandler):
         logging.info("CheckHandler:: Start checking")
         assert self.TESTS
 
-        yield self.environment.set_config(env_config=dict(is_checking=True))
-
         for category_name, tests in sorted(self.TESTS.items()):
             try:
                 yield self.check_category(self.code, category_name, tests)
@@ -163,7 +161,9 @@ class CheckHandler(BaseHandler):
         })
 
     def get_env_config(self, random_seed=None):
-        env_config = {}
+        env_config = {
+            'is_checking': True
+        }
         if self.ENV_COVERCODE is not None and self.ENV_COVERCODE.get(self.env_name) is not None:
             env_config['cover_code'] = self.ENV_COVERCODE[self.env_name]
         if random_seed is not None:
