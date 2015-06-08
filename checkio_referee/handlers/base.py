@@ -3,6 +3,8 @@ import logging
 from tornado import gen
 from tornado.ioloop import IOLoop
 
+from checkio_referee import exceptions
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,6 +19,9 @@ class BaseHandler(object):
                 self.env_name))
 
         self.code = editor_data.get('code')
+        if self.code is None:
+            raise exceptions.EditorError("Code is null")
+
         self.editor_client = editor_client
         self._referee = referee
 

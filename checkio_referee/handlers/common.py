@@ -161,7 +161,9 @@ class CheckHandler(BaseHandler):
         })
 
     def get_env_config(self, random_seed=None):
-        env_config = {}
+        env_config = {
+            'is_checking': True
+        }
         if self.ENV_COVERCODE is not None and self.ENV_COVERCODE.get(self.env_name) is not None:
             env_config['cover_code'] = self.ENV_COVERCODE[self.env_name]
         if random_seed is not None:

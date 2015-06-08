@@ -177,6 +177,10 @@ class EditorClient(object):
         yield self._write(packet.OutPacket.METHOD_CUSTOM, data)
 
     @gen.coroutine
+    def send_battle(self, data):
+        yield self._write(packet.OutPacket.METHOD_BATTLE, data)
+
+    @gen.coroutine
     def _confirm_connection(self):
         """
         Only after client send connection id, server will start send data.
