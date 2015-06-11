@@ -47,11 +47,14 @@ class EnvironmentsController(object):
             logging.error(e)
             raise
 
-        _on_stdout = partial(on_stdout, environment_id)
-        _on_stderr = partial(on_stderr, environment_id)
-        read_lines(environment_id, sub_process.stdout, _on_stdout)
-        read_lines(environment_id, sub_process.stderr, _on_stderr)
-
+        def decode_data(func):
+            def _decode(data):
+                return func(data.decode('utf-8'))
+            return _decode
+        _on_stdout = decode_data(partial(on_stdout, environment_id))
+        _on_stderr = decode_data(partial(on_stderr, environment_id))
+        sub_process.stdout.read_until_close(lambda a: a, streaming_callback=_on_stdout)
+        sub_process.stderr.read_until_close(lambda a: a, streaming_callback=_on_stderr)
         self._connections[environment_id] = Future()
         return self._connections[environment_id]
 
@@ -76,12 +79,3 @@ class EnvironmentsController(object):
 
     def is_valid_env(self, env_name):
         return env_name in self.environments
-
-
-def read_lines(exec_name, stream, data_callback, line=None):
-    if stream.closed():
-        return
-    if line is not None:
-        data_callback(line.decode().strip())
-    read_callback = partial(read_lines, exec_name, stream, data_callback)
-    stream.read_until(b'\n', read_callback)
