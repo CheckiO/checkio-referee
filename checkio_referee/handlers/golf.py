@@ -3,6 +3,7 @@ import logging
 from tornado import gen
 
 from checkio_referee.handlers.common import CheckHandler
+from checkio_referee import ENV_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +13,8 @@ class CodeGolfCheckHandler(CheckHandler):
     MAX_CODE_LENGTHS = {}  # key as environment name
     BASE_POINTS = 0
     COMMENT_MARKS = {
-        "javascript": "//",
-        "python_3": "#"
+        ENV_NAME.JS_NODE: "//",
+        ENV_NAME.PYTHON: "#"
     }
 
     REFEREE_SETTINGS_PRIORITY = (CheckHandler.REFEREE_SETTINGS_PRIORITY +
