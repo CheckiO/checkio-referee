@@ -74,7 +74,7 @@ class CheckHandler(BaseHandler):
 
     @gen.coroutine
     def start(self):
-        logging.info("CheckHandler:: Start checking")
+        logger.debug("CheckHandler:: Start checking")
         assert self.TESTS
 
         for category_name, tests in sorted(self.TESTS.items()):
@@ -92,7 +92,7 @@ class CheckHandler(BaseHandler):
 
     @gen.coroutine
     def check_category(self, code, category_name, tests, **kwargs):
-        logging.info("CHECK:: Start Category '{}' checking".format(category_name))
+        logger.debug("CHECK:: Start Category '{}' checking".format(category_name))
 
         environment = self.environment = yield self.get_environment(self.env_name)
         yield environment.set_config(self.get_env_config())
@@ -139,14 +139,14 @@ class CheckHandler(BaseHandler):
     def pre_test(self, test):
         representation = self.CALLED_REPRESENTATIONS.get(self.env_name, base_representation)
         called_str = representation(test, self.function_name)
-        logging.info("PRE_TEST:: Called: {}".format(called_str))
+        logger.debug("PRE_TEST:: Called: {}".format(called_str))
         yield self.editor_client.send_pre_test({
             'representation': called_str
         })
 
     @gen.coroutine
     def post_test(self, test, validator_result, category_name, test_number, run_result):
-        logging.info("POST_TEST:: Check result for category {0}, test {1}: {2}\n"
+        logger.debug("POST_TEST:: Check result for category {0}, test {1}: {2}\n"
                      "VALIDATOR: {3}".format(
             category_name,
             test_number,

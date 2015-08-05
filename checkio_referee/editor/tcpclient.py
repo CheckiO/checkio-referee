@@ -8,6 +8,8 @@ from checkio_referee.editor import packet
 from checkio_referee.exceptions import EditorPacketStructureError
 from checkio_referee.utils.signals import Signal
 
+logger = logging.getLogger(__name__)
+
 
 class EditorClient(object):
     """
@@ -39,7 +41,7 @@ class EditorClient(object):
         try:
             yield self._connect(self.__host, self.__port)
         except IOError as e:
-            logging.error(e, exc_info=True)
+            logger.error(e, exc_info=True)
             raise
         self._read()
         return True
@@ -61,22 +63,22 @@ class EditorClient(object):
         try:
             yield self._stream.write(message + self.TERMINATOR)
         except Exception as e:
-            logging.error(e, exc_info=True)
+            logger.error(e, exc_info=True)
         else:
-            logging.debug('EditorClient:: send: {}'.format(message))
+            logger.debug('EditorClient:: send: {}'.format(message))
 
     def _read(self):
         self._stream.read_until(self.TERMINATOR, self._on_data)
 
     def _on_data(self, data):
-        logging.info('UserClient:: received: {}'.format(data))
+        logger.debug('UserClient:: received: {}'.format(data))
         if data is None:
-            logging.error("UserClient:: received")
+            logger.error("UserClient:: received")
         else:
             try:
                 pkt = packet.InPacket.decode(data)
             except EditorPacketStructureError as e:
-                logging.error(e, exc_info=True)
+                logger.error(e, exc_info=True)
             else:
                 if pkt.request_id is not None:
                     f = self._requests[pkt.request_id]
