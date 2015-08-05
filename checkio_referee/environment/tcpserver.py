@@ -5,6 +5,8 @@ from tornado.escape import json_encode, json_decode
 from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 
+logger = logging.getLogger(__name__)
+
 
 class EnvironmentsTCPServer(TCPServer):
 
@@ -45,7 +47,7 @@ class StreamHandler(object):
 
     def _on_client_connection_close(self):
         self._is_connection_closed = True
-        logging.debug("[EXECUTOR-SERVER] :: Client at address {} has closed the connection".format(
+        logger.debug("[EXECUTOR-SERVER] :: Client at address {} has closed the connection".format(
             self.address
         ))
 
@@ -69,8 +71,8 @@ class StreamHandler(object):
         if self._is_connection_closed:
             return
         message = self._data_encode(message)
-        logging.debug("[EXECUTOR-SERVER] :: Message to executor {}".format(message))
+        logger.debug("[EXECUTOR-SERVER] :: Message to executor {}".format(message))
         try:
             yield self.stream.write(message + self.terminator)
         except Exception as e:
-            logging.error(e)
+            logger.error(e)

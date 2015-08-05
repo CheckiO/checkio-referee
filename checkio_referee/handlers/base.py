@@ -72,9 +72,9 @@ class BaseHandler(object):
         return environment
 
     def on_stdout(self, exec_name, line):
-        logging.debug("STDOUT: " + line)
+        logger.debug("STDOUT: " + line)
         IOLoop.current().spawn_callback(self.editor_client.send_stdout, line)
 
     def on_stderr(self, exec_name, line):
-        logging.debug("STDERR: " + line)
+        logger.debug("STDERR: " + line)
         IOLoop.current().spawn_callback(self.editor_client.send_stderr, line)

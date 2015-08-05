@@ -16,7 +16,7 @@ class RankCheckHandler(CheckHandler):
 
     @gen.coroutine
     def start(self):
-        logger.info("RankCheckHandler:: Start checking")
+        logger.debug("RankCheckHandler:: Start checking")
         assert self.TESTS
 
         points = 0

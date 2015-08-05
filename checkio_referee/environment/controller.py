@@ -1,4 +1,3 @@
-import os
 import logging
 import uuid
 from functools import partial
@@ -10,6 +9,8 @@ from tornado.process import Subprocess
 from checkio_referee.exceptions import CheckioEnvironmentError
 from checkio_referee.environment.tcpserver import EnvironmentsTCPServer
 from checkio_referee.environment.client import EnvironmentClient
+
+logger = logging.getLogger(__name__)
 
 
 class EnvironmentsController(object):
@@ -44,7 +45,7 @@ class EnvironmentsController(object):
             sub_process = Subprocess(args=args, executable=executable, stdout=stream,
                                      stderr=stream, env=env)
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             raise
 
         def decode_data(func):
@@ -64,7 +65,7 @@ class EnvironmentsController(object):
         environment_id = data['environment_id']
         environment_client = self.ENVIRONMENT_CLIENT_CLS(stream, environment_id)
         environment_client.set_on_stop_callback(self.on_environment_stopped)
-        logging.info("EnvironmentsController:: connected {}".format(environment_id))
+        logger.debug("EnvironmentsController:: connected {}".format(environment_id))
         self._connections[environment_id].set_result(environment_client)
 
     def on_environment_stopped(self, environment_id):
