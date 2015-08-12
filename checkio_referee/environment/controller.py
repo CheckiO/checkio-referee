@@ -40,7 +40,10 @@ class EnvironmentsController(object):
             environment_id
         ]
         stream = Subprocess.STREAM
-        env = {'PYTHONUNBUFFERED': '0'}
+        env = {
+            'PYTHONUNBUFFERED': '0',
+            'PYTHONIOENCODING': 'utf-8'
+        }
         try:
             sub_process = Subprocess(args=args, executable=executable, stdout=stream,
                                      stderr=stream, env=env)
