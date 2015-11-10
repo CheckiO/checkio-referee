@@ -40,10 +40,11 @@ class EditorClient(object):
     def connect(self):
         try:
             yield self._connect(self.__host, self.__port)
+            self._read()
         except IOError as e:
-            logger.error(e, exc_info=True)
-            raise
-        self._read()
+            logger.info('Reconnecting to editor')
+            yield gen.sleep(5)
+            yield self.connect()
         return True
 
     @gen.coroutine

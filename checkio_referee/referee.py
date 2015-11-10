@@ -64,8 +64,6 @@ class RefereeBase(object):
     @gen.coroutine
     def start(self):
         self.editor_connected = yield self.editor_client.connect()
-        if not self.editor_connected:
-            raise Exception("Bad connecting to editor server")
         self.editor_client.set_close_callback(self.on_close_user_connection)
         try:
             yield self.on_ready()
