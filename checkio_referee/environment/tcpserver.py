@@ -47,7 +47,7 @@ class StreamHandler(object):
 
     def _on_client_connection_close(self):
         self._is_connection_closed = True
-        logger.debug("[EXECUTOR-SERVER] :: Client at address {} has closed the connection".format(
+        logger.debug("[EXECUTOR-SERVER] :: CONNECTED {}".format(
             self.address
         ))
 
@@ -57,6 +57,7 @@ class StreamHandler(object):
             data = yield self.stream.read_until(self.terminator)
         except StreamClosedError:
             return
+        logger.debug("[EXECUTOR-SERVER] :: FROM {}".format(data))
         return self._data_decode(data)
 
     def _read_connection_message(self):
@@ -71,7 +72,7 @@ class StreamHandler(object):
         if self._is_connection_closed:
             return
         message = self._data_encode(message)
-        logger.debug("[EXECUTOR-SERVER] :: Message to executor {}".format(message))
+        logger.debug("[EXECUTOR-SERVER] :: TO {}".format(message))
         try:
             yield self.stream.write(message + self.terminator)
         except Exception as e:
