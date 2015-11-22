@@ -47,10 +47,11 @@ class OutPacket(PacketBase):
     METHOD_POST_TEST = 'post_test'
     METHOD_BATTLE = 'battle'
     METHOD_CUSTOM = 'custom'
+    METHOD_PROCESS = 'process'
 
     AVAILABLE_METHODS = (METHOD_SELECT, METHOD_STDOUT, METHOD_STDERR, METHOD_RESULT, METHOD_ERROR,
                          METHOD_STATUS, METHOD_SET, METHOD_PRE_TEST, METHOD_POST_TEST,
-                         METHOD_BATTLE, METHOD_CUSTOM)
+                         METHOD_BATTLE, METHOD_CUSTOM, METHOD_PROCESS)
 
 
 class InPacket(PacketBase):
