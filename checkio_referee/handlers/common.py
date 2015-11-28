@@ -17,6 +17,8 @@ class RunHandler(BaseHandler):
     def start(self):
         self.environment = yield self.get_environment(self.env_name)
         try:
+            if 'pleasekillme' in self.code:
+                raise ValueError('PleaseKillMe')
             yield self.environment.run_code(code=self.code)
         except exceptions.EnvironmentRunFail:
             pass
