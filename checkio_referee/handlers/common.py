@@ -174,6 +174,7 @@ class CheckHandler(BaseHandler):
 
     @gen.coroutine
     def _result_check(self, success, points=None, additional_data=None):
+        print('RESULT SEND')
         yield self.editor_client.send_check_result(
             success=success,
             code=self.code,
