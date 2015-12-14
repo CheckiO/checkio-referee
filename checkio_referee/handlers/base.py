@@ -59,11 +59,11 @@ class BaseHandler(object):
         if self._is_stopping is not None:
             return
         self._is_stopping = True
-        if self._stop_callback is not None:
-            self._stop_callback()
-
         if self.environment is not None:
             self.environment.stop()
+
+        if self._stop_callback is not None:
+            self._stop_callback()
 
     @gen.coroutine
     def get_environment(self, env_name):

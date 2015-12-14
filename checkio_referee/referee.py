@@ -98,6 +98,7 @@ class RefereeBase(object):
     def stop(self):
         if self._handler is not None:
             self._handler.stop()
+        print('KILLMYSELF')
         sys.exit()
 
     def _stop_signal_receiver(self, signal, data=None):
