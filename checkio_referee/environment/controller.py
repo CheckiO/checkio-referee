@@ -51,15 +51,21 @@ class EnvironmentsController(object):
             logger.error(e)
             raise
 
-        limits = {'out': 1000, 'environment_id': environment_id}
+        limits = {'out': 1000,
+                  'environment_id': environment_id,
+                  'is_closed': False,
+                  'sub_process': sub_process}
 
         def count_stds(data, limits=limits):
+            if limits['is_closed']:
+                return
             limits['out'] -= len(data)
             if limits['out'] > 0:
                 return True
+            limits['is_closed'] = True
             on_stderr(limits['environment_id'], u'Out limit reached')
-            sub_process.stdout.close()
-            sub_process.stderr.close()
+            limits['sub_process'].stdout.close()
+            limits['sub_process'].stderr.close()
 
         def decode_data(func):
             def _decode(data):
