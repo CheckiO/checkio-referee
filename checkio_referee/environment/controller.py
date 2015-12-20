@@ -51,7 +51,7 @@ class EnvironmentsController(object):
             logger.error(e)
             raise
 
-        limits = {'out': 1000,
+        limits = {'out': 2000,
                   'environment_id': environment_id,
                   'is_closed': False,
                   'sub_process': sub_process}
