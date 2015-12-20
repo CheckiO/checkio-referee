@@ -51,13 +51,13 @@ class EnvironmentsController(object):
             logger.error(e)
             raise
 
-        limits = {'out': 100, 'environment_id': environment_id}
+        limits = {'out': 1000, 'environment_id': environment_id}
 
         def count_stds(data, limits=limits):
             limits['out'] -= len(data)
             if limits['out'] > 0:
                 return True
-            on_stderr(u'Out limit reached', limits['environment_id'])
+            on_stderr(limits['environment_id'], u'Out limit reached')
             sub_process.stdout.close()
             sub_process.stderr.close()
 
