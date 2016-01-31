@@ -43,7 +43,7 @@ class EditorClient(object):
             self._read()
         except IOError as e:
             logger.info(e)
-            logger.info('Reconnecting to editor2')
+            logger.info('Reconnecting to editor {}:{}'.format(self.__host, self.__port))
             yield gen.sleep(5)
             self.connect()
         return True
