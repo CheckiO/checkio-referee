@@ -45,7 +45,7 @@ class EditorClient(object):
             logger.info(e)
             logger.info('Reconnecting to editor')
             yield gen.sleep(5)
-            yield self.connect()
+            self.connect()
         return True
 
     @gen.coroutine
