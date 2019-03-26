@@ -144,7 +144,8 @@ class CheckHandler(BaseHandler):
         called_str = representation(test, self.function_name)
         logger.debug("PRE_TEST:: Called: {}".format(called_str))
         yield self.editor_client.send_pre_test({
-            'representation': called_str
+            'representation': called_str,
+            'in': test["input"]
         })
 
     @gen.coroutine
