@@ -2,7 +2,8 @@
 This library contains various predefined called code representations for referee.
 """
 
-__all__ = ["base_representation", "unwrap_arg_representation", "py_tuple_representation"]
+__all__ = ["base_representation", "unwrap_arg_representation",
+           "py_tuple_representation", "input_representation"]
 
 
 def ext_str(data) -> str:
@@ -18,6 +19,8 @@ def ext_str(data) -> str:
 def base_representation(test, function_name):
     return "{}({})".format(function_name, ext_str(test["input"]))
 
+def input_representation(test):
+    return ext_str(test["input"])
 
 def unwrap_arg_representation(test, function_name):
     arguments = ", ".join(ext_str(d) for d in test["input"])

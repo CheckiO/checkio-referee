@@ -6,7 +6,7 @@ from tornado.ioloop import IOLoop
 from checkio_referee import exceptions
 from checkio_referee.handlers.base import BaseHandler
 from checkio_referee.utils import validators
-from checkio_referee.utils.representations import base_representation
+from checkio_referee.utils.representations import base_representation, input_representation
 
 logger = logging.getLogger(__name__)
 
@@ -142,9 +142,11 @@ class CheckHandler(BaseHandler):
     def pre_test(self, test):
         representation = self.CALLED_REPRESENTATIONS.get(self.env_name, base_representation)
         called_str = representation(test, self.function_name)
+        input_str = input_representation(test)
         logger.debug("PRE_TEST:: Called: {}".format(called_str))
         yield self.editor_client.send_pre_test({
-            'representation': called_str
+            'representation': called_str,
+            'in': input_str
         })
 
     @gen.coroutine
