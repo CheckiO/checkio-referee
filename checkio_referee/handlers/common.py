@@ -161,7 +161,8 @@ class CheckHandler(BaseHandler):
             'actual_result': run_result,
             'expected_result': test.get('answer'),
             'test_passed': validator_result.test_passed,
-            'additional_data': validator_result.additional_data
+            'additional_data': validator_result.additional_data,
+            'explanation': test.get('explanation')
         })
 
     def get_env_config(self, random_seed=None):
