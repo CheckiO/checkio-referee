@@ -12,10 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class EditorClient(object):
-    """
-    Client for connect Referee and server worker (send and request info).
-    Protocol description: https://checkio.atlassian.net/wiki/pages/viewpage.action?pageId=18219162
-    """
 
     TERMINATOR = b'\n'
     ATTR_NAME_CONNECTION_ID = 'user_connection_id'
@@ -27,7 +23,7 @@ class EditorClient(object):
         self.__user_connection_id = user_connection_id
         self.__docker_id = docker_id
         self._io_loop = io_loop
-        self.client = TCPClient(io_loop=self._io_loop)
+        self.client = TCPClient()
         self._stream = None
         self._requests = dict()
         self._requests_signals = {
