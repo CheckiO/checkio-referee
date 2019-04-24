@@ -70,9 +70,11 @@ class RefereeBase(object):
         except Exception as e:
             logger.error(e, exc_info=True)
             self.editor_client.send_error(str(e), traceback=traceback.format_exc())
+            print('STOP BY ERROR')
             self.stop()
 
     def on_close_user_connection(self):
+        print('CLOSE CONNECT')
         self.stop()
 
     @gen.coroutine
@@ -86,7 +88,10 @@ class RefereeBase(object):
             raise Exception("Handler for action {} is not available".format(action))
 
         self._handler = HandlerClass(editor_data, self.editor_client, self)
-        self._handler.add_stop_callback(self.stop)
+        def _stop(*args):
+            print('READY STOP')
+            self.stop()
+        self._handler.add_stop_callback(_stop)
         yield self._handler.start()
 
     @property
@@ -102,6 +107,7 @@ class RefereeBase(object):
         sys.exit()
 
     def _stop_signal_receiver(self, signal, data=None):
+        print('_stop_signal_receiver')
         self.stop()
 
 

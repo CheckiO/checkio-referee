@@ -79,7 +79,7 @@ class EditorClient(object):
             else:
                 if pkt.request_id is not None:
                     f = self._requests[pkt.request_id]
-                    f.set_result(result=pkt.data)
+                    f.set_result(pkt.data)
                     del self._requests[pkt.request_id]
                 signal = self._requests_signals[pkt.method]
                 signal.send(data=pkt.data)
