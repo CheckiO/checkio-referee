@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class BaseHandler(object):
 
     REFEREE_SETTINGS_PRIORITY = None
+    ENV_CONFIG = None
 
     def __init__(self, editor_data, editor_client, referee):
         self.env_name = editor_data.get('env_name')

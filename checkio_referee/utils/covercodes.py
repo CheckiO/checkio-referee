@@ -20,6 +20,6 @@ def cover(func, data):
 js_unwrap_args = """
 function cover(func, data, ctx){
    ctx = ctx || this;
-   return func.apply( ctx, data);
+   return func.apply(ctx, data);
 }
 """

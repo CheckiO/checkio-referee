@@ -19,7 +19,7 @@ class RunHandler(BaseHandler):
         try:
             if 'pleasekillme' in self.code:
                 raise ValueError('PleaseKillMe')
-            yield self.environment.run_code(code=self.code)
+            yield self.environment.run_code(code=self.code, env_config=self.ENV_CONFIG)
         except exceptions.EnvironmentRunFail:
             pass
         yield self.environment.stop()
@@ -101,7 +101,7 @@ class CheckHandler(BaseHandler):
         yield environment.set_config(self.get_env_config())
 
         try:
-            yield environment.run_code(code=code)
+            yield environment.run_code(code=code, env_config=self.ENV_CONFIG)
         except exceptions.EnvironmentRunFail:
             raise exceptions.RefereeCodeRunFailed()
 

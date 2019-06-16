@@ -31,10 +31,11 @@ class EnvironmentClient(object):
         return response
 
     @gen.coroutine
-    def run_code(self, code):
+    def run_code(self, code, env_config=None):
         result = yield self._request({
             'action': 'run_code',
             'code': code,
+            'env_config': env_config
         })
         return result
 
