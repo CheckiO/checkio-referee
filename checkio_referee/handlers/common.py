@@ -7,24 +7,34 @@ from checkio_referee import exceptions
 from checkio_referee.handlers.base import BaseHandler
 from checkio_referee.utils import validators
 from checkio_referee.utils.representations import base_representation
+from time import time
 
 logger = logging.getLogger(__name__)
 
 
 class RunHandler(BaseHandler):
-
+    RUN_TIMEOUT = 10
+    _time_start = 0
     @gen.coroutine
     def start(self):
         self.environment = yield self.get_environment(self.env_name)
         try:
             if 'pleasekillme' in self.code:
                 raise ValueError('PleaseKillMe')
+            self._time_start = time()
             yield self.environment.run_code(code=self.code, env_config=self.ENV_CONFIG)
         except exceptions.EnvironmentRunFail:
             pass
         yield self.environment.stop()
         yield self.editor_client.send_run_finish(code=self.code)
         self.stop()
+
+    @gen.coroutine
+    def back_check(self):
+        if time() - self._time_start > self.RUN_TIMEOUT:
+            yield self.environment.stop()
+            yield self.editor_client.send_run_finish(code=self.code)
+            self.stop()
 
 
 class RunInConsoleHandler(BaseHandler):
