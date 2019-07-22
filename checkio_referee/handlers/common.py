@@ -31,7 +31,7 @@ class RunHandler(BaseHandler):
 
     @gen.coroutine
     def back_check(self):
-        if time() - self._time_start > self.RUN_TIMEOUT:
+        if self._time_start and time() - self._time_start > self.RUN_TIMEOUT:
             yield self.environment.stop()
             yield self.editor_client.send_run_finish(code=self.code)
             self.stop()

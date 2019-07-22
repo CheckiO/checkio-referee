@@ -30,6 +30,7 @@ class BaseHandler(object):
         self._is_stopping = None
         self._stop_callback = None
         self._back_check = PeriodicCallback(self.back_check, 500)
+        self._back_check.start()
 
     def __getattribute__(self, attr):
         referee_priority = object.__getattribute__(self, 'REFEREE_SETTINGS_PRIORITY')
