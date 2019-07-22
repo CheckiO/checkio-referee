@@ -136,11 +136,12 @@ class CheckHandler(BaseHandler):
     def back_check(self):
         if self._time_start and time() - self._time_start > self.RUN_TIMEOUT:
             yield self.environment.stop()
-            yield self.editor_client.send_run_finish(code=self.code)
+            yield self.result_check_fail()
             self.stop()
+
         if self._time_one_test and time() - self._time_one_test > self.ONE_TEST_TIMEOUT:
             yield self.environment.stop()
-            yield self.editor_client.send_run_finish(code=self.code)
+            yield self.result_check_fail()
             self.stop()
 
     @gen.coroutine
