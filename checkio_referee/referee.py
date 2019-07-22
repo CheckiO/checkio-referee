@@ -33,6 +33,8 @@ class RefereeBase(object):
                                  HANDLER_ACTION_RUN_IN_CONSOLE)
 
     EDITOR_LOAD_ARGS = ('code', 'action', 'env_name')
+    
+    RUN_TIMEOUT = 10
 
     def __init__(self, server_host, server_port, user_connection_id, docker_id, io_loop=None):
         assert self.ENVIRONMENTS

@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class RunHandler(BaseHandler):
-    RUN_TIMEOUT = 10
     _time_start = 0
     @gen.coroutine
     def start(self):
