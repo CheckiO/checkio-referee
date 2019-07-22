@@ -88,7 +88,6 @@ class CheckHandler(BaseHandler):
 
     @gen.coroutine
     def start(self):
-        print('START')
         logger.debug("CheckHandler:: Start checking")
         assert self.TESTS
 
