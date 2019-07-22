@@ -34,6 +34,9 @@ class RefereeBase(object):
 
     EDITOR_LOAD_ARGS = ('code', 'action', 'env_name')
 
+    RUN_TIMEOUT = 10
+    ONE_TEST_TIMEOUT = 5
+
     def __init__(self, server_host, server_port, user_connection_id, docker_id, io_loop=None):
         assert self.ENVIRONMENTS
         self.__user_connection_id = user_connection_id

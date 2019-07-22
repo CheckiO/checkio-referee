@@ -1,7 +1,7 @@
 import logging
 
 from tornado import gen
-from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop, PeriodicCallback
 
 from checkio_referee import exceptions
 
@@ -29,6 +29,8 @@ class BaseHandler(object):
         self.environment = None
         self._is_stopping = None
         self._stop_callback = None
+        self._back_check = PeriodicCallback(self.back_check, 500)
+        self._back_check.start()
 
     def __getattribute__(self, attr):
         referee_priority = object.__getattribute__(self, 'REFEREE_SETTINGS_PRIORITY')
@@ -48,6 +50,10 @@ class BaseHandler(object):
                 raise AttributeError('Object {} does not have attribute {}'. format(self, attr))
             else:
                 raise
+
+    @gen.coroutine
+    def back_check(self):
+        pass
 
     @gen.coroutine
     def start(self):
