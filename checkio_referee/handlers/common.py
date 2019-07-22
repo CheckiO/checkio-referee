@@ -79,6 +79,9 @@ class CheckHandler(BaseHandler):
         'CALLED_REPRESENTATIONS',
     )
 
+    _time_start = 0
+    _time_one_test = 0
+
     @property
     def function_name(self):
         return self.FUNCTION_NAMES.get(self.env_name, self.DEFAULT_FUNCTION_NAME)
@@ -109,13 +112,18 @@ class CheckHandler(BaseHandler):
         environment = self.environment = yield self.get_environment(self.env_name)
         yield environment.set_config(self.get_env_config())
 
+        self._time_start = time()
         try:
             yield environment.run_code(code=code, env_config=self.ENV_CONFIG)
         except exceptions.EnvironmentRunFail:
             raise exceptions.RefereeCodeRunFailed()
+        self._time_start = 0
 
         for test_number, test in enumerate(tests):
+            self._time_one_test = time()
             test_passed = yield self.check_test_item(environment, test, category_name, test_number)
+            self._time_one_test = 0
+
             if not test_passed:
                 yield environment.stop()
                 description = "Category: {0}. Test {1} Validate Failed".format(category_name,
@@ -123,6 +131,17 @@ class CheckHandler(BaseHandler):
                 raise exceptions.RefereeTestFailed(description=description)
 
         yield environment.stop()
+
+    @gen.coroutine
+    def back_check(self):
+        if self._time_start and time() - self._time_start > self.RUN_TIMEOUT:
+            yield self.environment.stop()
+            yield self.editor_client.send_run_finish(code=self.code)
+            self.stop()
+        if self._time_one_test and time() - self._time_one_test > self.ONE_TEST_TIMEOUT:
+            yield self.environment.stop()
+            yield self.editor_client.send_run_finish(code=self.code)
+            self.stop()
 
     @gen.coroutine
     def check_test_item(self, environment, test, category_name, test_number):
