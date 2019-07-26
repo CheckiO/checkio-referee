@@ -1,4 +1,5 @@
 from tornado import gen
+import logging
 
 from checkio_referee import exceptions
 logger = logging.getLogger(__name__)
