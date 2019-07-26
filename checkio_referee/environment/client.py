@@ -23,7 +23,7 @@ class EnvironmentClient(object):
     @gen.coroutine
     def read_message(self):
         message = yield self._stream.read_message()
-        logger.debug('RECEIVE: {}', message)
+        logger.debug('RECEIVE: {}'.format(message))
         return message
 
     @gen.coroutine
