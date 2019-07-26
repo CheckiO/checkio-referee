@@ -1,6 +1,7 @@
 from tornado import gen
 
 from checkio_referee import exceptions
+logger = logging.getLogger(__name__)
 
 
 class EnvironmentClient(object):
@@ -20,7 +21,9 @@ class EnvironmentClient(object):
 
     @gen.coroutine
     def read_message(self):
-        return (yield self._stream.read_message())
+        message = yield self._stream.read_message()
+        logger.debug('RECEIVE: {}', message)
+        return message
 
     @gen.coroutine
     def _request(self, data):
