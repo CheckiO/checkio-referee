@@ -18,12 +18,13 @@ class EnvironmentClient(object):
 
     @gen.coroutine
     def write(self, data):
+        logger.debug('CLIENT SEND: {}'.format(data))
         yield self._stream.write(data)
 
     @gen.coroutine
     def read_message(self):
         message = yield self._stream.read_message()
-        logger.debug('RECEIVE: {}'.format(message))
+        logger.debug('CLIENT RECEIVE: {}'.format(message))
         return message
 
     @gen.coroutine
